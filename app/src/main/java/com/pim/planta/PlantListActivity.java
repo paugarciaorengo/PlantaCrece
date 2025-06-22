@@ -30,7 +30,7 @@ import com.pim.planta.models.UserLogged;
 import java.util.List;
 
 public class PlantListActivity extends NotificationActivity {
-
+    private BottomNavigationHelper.Binding bottomNavBinding;
     private RecyclerView plantListRecyclerView;
     private PlantAdapter plantAdapter;
     private List<Plant> plantList;
@@ -52,7 +52,10 @@ public class PlantListActivity extends NotificationActivity {
 
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plantlist);
-        setupBottom();
+        // Obtener referencia al contenedor de navegación inferior
+        View bottomNavView = findViewById(R.id.bottomNavigation);
+        bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
+        BottomNavigationHelper.setup(this, bottomNavBinding, PlantListActivity.class);
 
         // Referencia al TextView donde se mostrará la planta elegida
         plantaElegidaTextView = findViewById(R.id.textView3);
@@ -122,49 +125,4 @@ public class PlantListActivity extends NotificationActivity {
         startActivity(intent);
     }
 
-    // Método para animar los botones de la barra inferior
-    private void animateButton(View view) {
-        ObjectAnimator animator = ObjectAnimator.ofPropertyValuesHolder(
-                view,
-                PropertyValuesHolder.ofFloat("scaleX", 0.9f, 1.0f),
-                PropertyValuesHolder.ofFloat("scaleY", 0.9f, 1.0f)
-        );
-        animator.setDuration(150); // Duración de la animación
-        animator.start();
-    }
-
-    public void setupBottom() {
-        ImageButton imageButtonLupa = findViewById(R.id.imageButtonLupa);
-        ImageButton imageButtonMaceta = findViewById(R.id.imageButtonMaceta);
-        SharedPreferences sharedPreferences = getSharedPreferences("plant_prefs", MODE_PRIVATE);
-        ImageButton imageButtonPlantadex = findViewById(R.id.imageButtonPlantadex);
-        imageButtonPlantadex.setEnabled(false); // Deshabilita el botón
-        imageButtonPlantadex.setImageAlpha(128); // Oscurece el botón
-        ImageButton imageButtonUsuario = findViewById(R.id.imageButtonUsuario);
-        if (sharedPreferences.getString("selectedPlant",null) == null) {
-            imageButtonLupa.setEnabled(false);
-            imageButtonLupa.setImageAlpha(128);
-            imageButtonMaceta.setEnabled(false);
-            imageButtonMaceta.setImageAlpha(128);
-            imageButtonUsuario.setEnabled(false);
-            imageButtonUsuario.setImageAlpha(128);
-        }
-        imageButtonLupa.setOnClickListener(v -> {
-            animateButton(v); // Añade la animación
-            Intent intent = new Intent(PlantListActivity.this, DiaryActivity.class);
-            startActivity(intent);
-        });
-
-        imageButtonMaceta.setOnClickListener(view -> {
-            animateButton(view); // Añade la animación
-            Intent intent = new Intent(PlantListActivity.this, JardinActivity.class);
-            startActivity(intent);
-        });
-
-        imageButtonUsuario.setOnClickListener(v -> {
-            animateButton(v); // Añade la animación
-            Intent intent = new Intent(PlantListActivity.this, PerfilActivity.class);
-            startActivity(intent);
-        });
-    }
 }

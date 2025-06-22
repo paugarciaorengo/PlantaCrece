@@ -32,7 +32,7 @@ public final class DatabasePlantoo_Impl extends DatabasePlantoo {
   @Override
   @NonNull
   protected SupportSQLiteOpenHelper createOpenHelper(@NonNull final DatabaseConfiguration config) {
-    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(12) {
+    final SupportSQLiteOpenHelper.Callback _openCallback = new RoomOpenHelper(config, new RoomOpenHelper.Delegate(13) {
       @Override
       public void createAllTables(@NonNull final SupportSQLiteDatabase db) {
         db.execSQL("CREATE TABLE IF NOT EXISTS `plants` (`id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL, `name` TEXT, `basePath` TEXT, `imageResourceId` INTEGER NOT NULL, `xp` INTEGER NOT NULL, `xpMax` INTEGER NOT NULL, `description` TEXT, `scientificName` TEXT, `nickname` TEXT)");

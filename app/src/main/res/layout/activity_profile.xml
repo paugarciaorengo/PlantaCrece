@@ -206,51 +206,11 @@
         </LinearLayout>
     </androidx.core.widget.NestedScrollView>
 
-    <LinearLayout
-        android:id="@+id/bottomNavigation"
+    <include
+        layout="@layout/layout_bottom_navigation"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:background="@color/white"
-        android:gravity="center"
-        android:orientation="horizontal"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent">
-        <!-- Lupa Button -->
-        <ImageButton
-            android:id="@+id/imageButtonLupa"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:contentDescription="Lupa"
-            android:src="@drawable/ic_home" />
-        <!-- Garden Button -->
-        <ImageButton
-            android:id="@+id/imageButtonMaceta"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:contentDescription="Garden"
-            android:src="@drawable/ic_tulip" />
-        <!-- Plantdex Button -->
-        <ImageButton
-            android:id="@+id/imageButtonPlantadex"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:contentDescription="Plantdex"
-            android:src="@drawable/ic_plantdex" />
-        <!-- Profile Button -->
-        <ImageButton
-            android:id="@+id/imageButtonUsuario"
-            android:layout_width="0dp"
-            android:layout_height="48dp"
-            android:layout_weight="1"
-            android:background="@android:color/transparent"
-            android:contentDescription="Profile"
-            android:src="@drawable/ic_profile" />
-    </LinearLayout>
+        app:layout_constraintStart_toStartOf="parent"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

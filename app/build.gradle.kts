@@ -49,6 +49,7 @@ dependencies {
     implementation(libs.constraintlayout)
     implementation(libs.room.common)
     implementation(libs.room.runtime)
+    implementation(libs.espresso.core)
     testImplementation(libs.ext.junit)
     testImplementation(libs.ext.junit)
     annotationProcessor(libs.room.compiler)

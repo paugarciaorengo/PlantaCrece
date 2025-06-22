@@ -1,5 +1,4 @@
 package com.pim.planta.models;
-
 import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.Canvas;
@@ -9,160 +8,118 @@ import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.util.AttributeSet;
 import android.view.View;
-
 import androidx.core.content.res.ResourcesCompat;
-
 import com.pim.planta.R;
-
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
-
 public class CalendarDraw extends View {
-
-    private Paint dayPaint, headerPaint, backGroundPaint, underlinePaint, highlightedDayPaint, highlightedDayCircle;
-    private int currentMonth, currentYear;
+    private static final int DAYS_IN_WEEK = 7;
+    private static final int MAX_WEEKS = 6;
+    private static final int HEADER_HEIGHT = 100;
+    private Paint dayPaint, headerPaint, backGroundPaint, underlinePaint,
+            highlightedDayPaint, highlightedDayCircle;
     private Typeface customFont, customFontBold;
+    private int currentMonth, currentYear;
     private LocalDate highlightedDay;
-
     private List<DiaryEntry> diaryEntries;
-
     public CalendarDraw(Context context, AttributeSet attrs) {
         super(context, attrs);
         init();
-        currentYear = LocalDate.now().getYear();
     }
-
     public CalendarDraw(Context context) {
         super(context);
         init();
-        currentYear = LocalDate.now().getYear();
     }
-
     private void init() {
         customFont = ResourcesCompat.getFont(getContext(), R.font.aventa);
         customFontBold = Typeface.create(customFont, Typeface.BOLD);
-
-        dayPaint = new Paint();
-        dayPaint.setColor(Color.parseColor("#073E24"));;
-        dayPaint.setTextSize(46);
-        dayPaint.setTextAlign(Paint.Align.CENTER);
-        dayPaint.setTypeface(customFont);
-
-        underlinePaint = new Paint();
-        underlinePaint.setColor(Color.parseColor("#35D18F"));
-        underlinePaint.setStrokeWidth(5f);
-
-        headerPaint = new Paint();
-        headerPaint.setColor(Color.parseColor("#073E24"));
-        headerPaint.setTextSize(48);
-        headerPaint.setTextAlign(Paint.Align.CENTER);
-        headerPaint.setTypeface(customFontBold);
-
-        highlightedDayPaint = new Paint();
-        highlightedDayPaint.setColor(Color.WHITE);
-        highlightedDayPaint.setTextSize(46);
-        highlightedDayPaint.setTextAlign(Paint.Align.CENTER);
-        highlightedDayPaint.setTypeface(customFont);
-
+        dayPaint = createPaint(Color.parseColor("#073E24"), 46, Paint.Align.CENTER,
+                customFont);
+        underlinePaint = createStrokePaint(Color.parseColor("#35D18F"), 5f);
+        headerPaint = createPaint(Color.parseColor("#073E24"), 48, Paint.Align.CENTER,
+                customFontBold);
+        highlightedDayPaint = createPaint(Color.WHITE, 46, Paint.Align.CENTER,
+                customFont);
         highlightedDayCircle = new Paint();
         highlightedDayCircle.setColor(getResources().getColor(R.color.dark_green));
         highlightedDayCircle.setStyle(Paint.Style.FILL);
-
         backGroundPaint = new Paint();
         backGroundPaint.setColor(Color.WHITE);
         backGroundPaint.setStyle(Paint.Style.FILL);
-
-        backGroundPaint = new Paint();
-        backGroundPaint.setColor(Color.WHITE);
-        backGroundPaint.setStyle(Paint.Style.FILL);
-
-        //emotionPaint = new Paint();
-        //emotionPaint.setStyle(Paint.Style.FILL);
-
         LocalDate today = LocalDate.now();
-        currentMonth = today.getMonthValue(); // Mes actual (1-12)
+        currentMonth = today.getMonthValue();
         currentYear = today.getYear();
     }
-
+    private Paint createPaint(int color, float textSize, Paint.Align align, Typeface typeface) {
+        Paint paint = new Paint();
+        paint.setColor(color);
+        paint.setTextSize(textSize);
+        paint.setTextAlign(align);
+        paint.setTypeface(typeface);
+        return paint;
+    }
+    private Paint createStrokePaint(int color, float strokeWidth) {
+        Paint paint = new Paint();
+        paint.setColor(color);
+        paint.setStrokeWidth(strokeWidth);
+        paint.setStyle(Paint.Style.STROKE);
+        return paint;
+    }
     @Override
     protected void onDraw(Canvas canvas) {
         super.onDraw(canvas);
         float cornerRadius = getWidth() * 0.05f;
-        RectF calendarBounds = new RectF(0, 0, getWidth(), getHeight());
-        canvas.drawRoundRect(calendarBounds, cornerRadius, cornerRadius, backGroundPaint);
-        canvas.clipRect(calendarBounds);
+        RectF bounds = new RectF(0, 0, getWidth(), getHeight());
+        canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, backGroundPaint);
+        canvas.clipRect(bounds);
         drawMonthHeader(canvas);
         drawDays(canvas);
         invalidate();
-        //drawButtonChangePerspective(canvas);
     }
     private void drawMonthHeader(Canvas canvas) {
-        // Dibuja el encabezado (solo mes)
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH);
-        String monthName = LocalDate.of(currentYear, currentMonth, 1).format(formatter);
-
-        // Convert month name to uppercase
-        String monthNameUppercase = monthName.toUpperCase();
-
-        // Add margin to the top
-        canvas.drawText(monthNameUppercase, getWidth() / 2, 100, headerPaint);
+        String monthName = LocalDate.of(currentYear, currentMonth, 1)
+                .format(DateTimeFormatter.ofPattern("MMMM", Locale.ENGLISH))
+                .toUpperCase();
+        canvas.drawText(monthName, getWidth() / 2f, HEADER_HEIGHT, headerPaint);
     }
-
-
-
     private void drawDays(Canvas canvas) {
-        int dayWidth = getWidth() / 7;
-        int dayHeight = (getHeight() - 100) / 6;
-
-        LocalDate firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1);
-        int daysInMonth = firstDayOfMonth.lengthOfMonth();
-
-        int startDayOfWeek = firstDayOfMonth.getDayOfWeek().getValue();
+        int dayWidth = getWidth() / DAYS_IN_WEEK;
+        int dayHeight = (getHeight() - HEADER_HEIGHT) / MAX_WEEKS;
+        LocalDate firstDay = LocalDate.of(currentYear, currentMonth, 1);
+        int daysInMonth = firstDay.lengthOfMonth();
+        int startDayOfWeek = firstDay.getDayOfWeek().getValue();
         int startColumn = (startDayOfWeek == 7) ? 6 : startDayOfWeek - 1;
-
-
-        // Recorre el mes entero para dibujarlo
         for (int day = 1; day <= daysInMonth; day++) {
-
-            //Logica de los dias
-            int column = (startColumn + day - 1) % 7; // Calcular la columna basándose en el día de la semana
-            int row = (startColumn + day - 1) / 7; // Calcular la fila
-
-            float x = column * dayWidth + dayWidth / 2; // Coordenada X (centro de la celda)
-            float y = row * dayHeight + dayHeight / 2 + 100; // Coordenada Y (centro de la celda)
-
-            //emotionPaint.setColor(Color.WHITE);
-            //canvas.drawCircle(x, y, dayWidth / 3, emotionPaint);
-
-            canvas.drawText(String.valueOf(day), x, y + 10, dayPaint);
-            LocalDate currentDay = LocalDate.of(currentYear, currentMonth, day);
-            if (hasEntryForDay(currentDay) && !currentDay.equals(highlightedDay)) {
-                // Draw entry style (green line)
-                float lineStartX = x - dayWidth / 4;
-                float lineEndX = x + dayWidth / 4;
-                float lineY = y + 20;
-                canvas.drawLine(lineStartX, lineY, lineEndX, lineY, underlinePaint);
-            }
-            if (currentDay.equals(highlightedDay) && hasEntryForDay(currentDay)) {
-                // Draw highlighted day style
-                canvas.drawCircle(x, y, dayWidth / 3, highlightedDayCircle); // Draw circle
-                canvas.drawText(String.valueOf(day), x, y + 10, highlightedDayPaint); // Draw day number
-                float lineStartX = x - dayWidth / 4;
-                float lineEndX = x + dayWidth / 4;
-                float lineY = y + 20;
-                canvas.drawLine(lineStartX, lineY, lineEndX, lineY, highlightedDayPaint);
-            }
-            if (currentDay.equals(highlightedDay) && !hasEntryForDay(currentDay)) {
-                canvas.drawCircle(x, y, dayWidth / 3, highlightedDayCircle); // Draw circle
-                canvas.drawText(String.valueOf(day), x, y + 10, highlightedDayPaint); // Draw day number
+            int col = (startColumn + day - 1) % DAYS_IN_WEEK;
+            int row = (startColumn + day - 1) / DAYS_IN_WEEK;
+            float x = col * dayWidth + dayWidth / 2f;
+            float y = row * dayHeight + dayHeight / 2f + HEADER_HEIGHT;
+            LocalDate currentDate = LocalDate.of(currentYear, currentMonth, day);
+            boolean isHighlighted = currentDate.equals(highlightedDay);
+            boolean hasEntry = hasEntryForDay(currentDate);
+            if (isHighlighted) {
+                canvas.drawCircle(x, y, dayWidth / 3f, highlightedDayCircle);
+                canvas.drawText(String.valueOf(day), x, y + 10, highlightedDayPaint);
+                if (hasEntry) {
+                    drawUnderline(canvas, x, y, dayWidth, highlightedDayPaint);
+                }
+            } else {
+                canvas.drawText(String.valueOf(day), x, y + 10, dayPaint);
+                if (hasEntry) {
+                    drawUnderline(canvas, x, y, dayWidth, underlinePaint);
+                }
             }
         }
     }
-
+    private void drawUnderline(Canvas canvas, float x, float y, int width, Paint paint) {
+        float startX = x - width / 4f;
+        float endX = x + width / 4f;
+        canvas.drawLine(startX, y + 20, endX, y + 20, paint);
+    }
     @SuppressLint("NewApi")
     public long normalizeToStartOfDay(long timestamp) {
         return LocalDate.ofInstant(Instant.ofEpochMilli(timestamp), ZoneId.systemDefault())
@@ -170,83 +127,72 @@ public class CalendarDraw extends View {
                 .toInstant()
                 .toEpochMilli();
     }
-
     public int getDayFromCoordinates(float x, float y) {
         int calendarStartY = getHeight() / 5;
-        int dayWidth = getWidth() / 7;
-        int dayHeight = (getHeight() - calendarStartY) / 6;
-
-        LocalDate firstDayOfMonth = LocalDate.of(currentYear, currentMonth, 1);
-        int startDayOfWeek = firstDayOfMonth.getDayOfWeek().getValue(); // Lunes=1, Domingo=7
-
-        int startColumn = (startDayOfWeek == 7) ? 6 : startDayOfWeek - 1; // El domingo debe caer en columna 6
-
-        int col = (int) (x / dayWidth); // Columna que toca (0-6)
-        int row = (int) ((y - calendarStartY) / dayHeight); // Fila que toca (0-5)
-
+        int dayWidth = getWidth() / DAYS_IN_WEEK;
+        int dayHeight = (getHeight() - calendarStartY) / MAX_WEEKS;
+        LocalDate firstDay = LocalDate.of(currentYear, currentMonth, 1);
+        int startDayOfWeek = firstDay.getDayOfWeek().getValue();
+        int startColumn = (startDayOfWeek == 7) ? 6 : startDayOfWeek - 1;
+        int col = (int) (x / dayWidth);
+        int row = (int) ((y - calendarStartY) / dayHeight);
         if (col >= 0 && col < 7 && row >= 0 && row < 6) {
             int dayClicked = row * 7 + col + 1 - startColumn;
-
-            if (dayClicked > 0 && dayClicked <= firstDayOfMonth.lengthOfMonth()) {
+            if (dayClicked > 0 && dayClicked <= firstDay.lengthOfMonth()) {
                 return dayClicked;
             }
         }
         return -1;
     }
-
-
-
     public void setDiaryEntries(List<DiaryEntry> entries) {
         this.diaryEntries = entries;
-        invalidate(); // Redibuja el calendario con la nueva información
+        invalidate();
     }
-
     public void prevMonth() {
-        currentMonth--;
-        if (currentMonth < 1) {
+        currentMonth = Math.max(1, currentMonth - 1);
+        invalidate();
+    }
+    public void nextMonth() {
+        currentMonth++;
+        if (currentMonth > 12) {
             currentMonth = 1;
+            currentYear++;
+        }
+        // Validar mes futuro
+        LocalDate now = LocalDate.now();
+        if (currentYear == now.getYear() && currentMonth > now.getMonthValue()) {
+            currentMonth = now.getMonthValue();
         }
         invalidate();
     }
-
-    public void nextMonth() {
-        currentMonth++;
-        if (currentMonth > 12)
-            currentMonth = 12;
-        if (currentMonth > LocalDate.now().getMonthValue() && currentYear == LocalDate.now().getYear())
-            currentMonth = LocalDate.now().getMonthValue();
-        invalidate();
-    }
-
     public int getCurrentYear() {
         return currentYear;
     }
-
-    public void setCurrentYear(int currentYear) {
-        this.currentYear = currentYear;
+    public void setCurrentYear(int year) {
+        this.currentYear = year;
     }
-
     public int getCurrentMonth() {
         return currentMonth;
     }
-
-    public LocalDate getCurrentDay() {return highlightedDay;}
-
-    public void setCurrentMonth(int monthValue) {
-        this.currentMonth = monthValue;
+    public void setCurrentMonth(int month) {
+        this.currentMonth = month;
     }
-
+    public LocalDate getCurrentDay() {
+        return highlightedDay;
+    }
     public void highlightDay(LocalDate date) {
-        highlightedDay = date;
-        invalidate(); // Redraw the calendar
+        this.highlightedDay = date;
+        invalidate();
     }
-
-    public boolean hasEntryForDay(LocalDate day) {
+    public boolean hasEntryForDay(LocalDate date) {
         if (diaryEntries == null || diaryEntries.isEmpty()) {
             return false;
         }
         for (DiaryEntry entry : diaryEntries) {
-            if (Instant.ofEpochMilli(entry.getDate()).atZone(ZoneId.systemDefault()).toLocalDate().equals(day)) {
+            LocalDate entryDate = Instant.ofEpochMilli(entry.getDate())
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate();
+            if (entryDate.equals(date)) {
                 return true;
             }
         }

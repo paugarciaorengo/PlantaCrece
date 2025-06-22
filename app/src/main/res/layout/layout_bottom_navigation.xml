@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/bottomNavigation"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="@color/white"
+    android:gravity="center"
+    android:orientation="horizontal"
+    android:paddingVertical="4dp">
+
+    <!-- Lupa Button -->
+    <ImageButton
+        android:id="@+id/imageButtonLupa"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:background="@android:color/transparent"
+        android:contentDescription="Lupa"
+        android:src="@drawable/ic_home" />
+
+    <ImageButton
+        android:id="@+id/imageButtonComunity"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:background="@android:color/transparent"
+        android:contentDescription="Plantdex"
+        android:src="@drawable/ic_comunity" />
+
+    <!-- Garden Button -->
+    <ImageButton
+        android:id="@+id/imageButtonMaceta"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:background="@android:color/transparent"
+        android:contentDescription="Garden"
+        android:src="@drawable/ic_tulip" />
+
+    <!-- Plantdex Button -->
+    <ImageButton
+        android:id="@+id/imageButtonPlantadex"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:background="@android:color/transparent"
+        android:contentDescription="Plantdex"
+        android:src="@drawable/ic_plantdex" />
+
+    <!-- Profile Button -->
+    <ImageButton
+        android:id="@+id/imageButtonUsuario"
+        android:layout_width="0dp"
+        android:layout_height="48dp"
+        android:layout_weight="1"
+        android:background="@android:color/transparent"
+        android:contentDescription="Profile"
+        android:src="@drawable/ic_profile" />
+</LinearLayout>
