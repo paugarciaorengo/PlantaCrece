@@ -52,7 +52,7 @@ public class PlantAdapterTest {
         plantList = new ArrayList<>();
         plantList.add(new Plant("Plant 1", "basePath", R.drawable.ic_launcher_foreground, 100, 200, "Description 1", "Scientific 1"));
         plantList.add(new Plant("Plant 2", "basePath", R.drawable.ic_launcher_foreground, 150, 250, "Description 2", "Scientific 2"));
-        plantAdapter = new PlantAdapter(plantList, aventaFont, dao, user);
+        plantAdapter = new PlantAdapter(context, plantList, aventaFont, dao, user);
     }
 
     @Test

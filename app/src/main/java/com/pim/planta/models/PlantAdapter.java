@@ -1,4 +1,5 @@
 package com.pim.planta.models;
+import android.content.Context;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
 import android.util.Log;
@@ -12,21 +13,24 @@ import androidx.recyclerview.widget.RecyclerView;
 import com.pim.planta.R;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
-
+import com.pim.planta.db.PlantooRepository;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;
-public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHolder>
-{
+public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHolder> {
+    private Context context;
+    private PlantooRepository plantooRepository;
     private List<Plant> plantList;
     private OnItemClickListener onItemClickListener;
     private Typeface aventaFont;
     private DAO dao;
     private User user;
-    public PlantAdapter(List<Plant> plantList, Typeface aventaFont, DAO dao, User user) {
+
+    public PlantAdapter(Context context, List<Plant> plantList, Typeface font, PlantooRepository repository, User user) {
+        this.context = context;
         this.plantList = plantList;
-        this.aventaFont = aventaFont;
-        this.dao = dao;
+        this.aventaFont = font;
+        this.plantooRepository = repository;
         this.user = user;
     }
     @NonNull
@@ -42,8 +46,12 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
 
         Plant plant = plantList.get(position);
         if (plant.getNickname() != null && !plant.getNickname().isEmpty())
-            holder.plantNameTextView.setText(plant.getNickname() + " XP: " + plant.getXp() + "/"
-                    + plant.getXpMax());
+            holder.plantNameTextView.setText(
+                    context.getString(R.string.xp_format,
+                            plant.getNickname(),
+                            plant.getXp(),
+                            plant.getXpMax())
+            );
         else
             holder.plantNameTextView.setText(plant.getName());
         holder.plantImageView.setImageResource(plant.getImageResourceId());
@@ -51,9 +59,12 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
         if (user != null) {
             DatabaseExecutor.executeAndWait(() -> {
                 try {
-                    int growthCount = Math.max(0, dao.getGrowCount(user.getId(),
+                    int growthCount = Math.max(0, plantooRepository.getGrowCount(user.getId(),
                             dao.getPlantaByName(plant.getName()).getId()));
-                    holder.plantGrowthCountTextView.setText("Growth count: " + growthCount);
+                    Context context = holder.itemView.getContext();
+                    holder.plantGrowthCountTextView.setText(
+                            context.getString(R.string.growth_count_label) + growthCount
+                    );
                 } catch (Exception e) {
                     Log.e("PlantAdapter", "Error getting growth count", e);
                 }

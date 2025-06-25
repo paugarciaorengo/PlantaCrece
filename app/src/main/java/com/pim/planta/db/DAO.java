@@ -75,4 +75,7 @@ public interface DAO {
 
     @Query("SELECT * FROM plants WHERE name = :plantName")
     LiveData<Plant> getLivePlantaByName(String plantName);
+
+    @Query("UPDATE plants SET xp = xp + :amount WHERE name = :plantName")
+    void incrementXpByPlantName(String plantName, int amount);
 }

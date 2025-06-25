@@ -15,7 +15,8 @@ import com.pim.planta.models.UserPlantRelation;
         User.class,
         DiaryEntry.class,
         UserPlantRelation.class,
-}, version = 13)
+
+}, version = 14)  // Incrementa la versión
 @TypeConverters({Converters.class})
 public abstract class DatabasePlantoo extends RoomDatabase {
     public abstract DAO DAO();

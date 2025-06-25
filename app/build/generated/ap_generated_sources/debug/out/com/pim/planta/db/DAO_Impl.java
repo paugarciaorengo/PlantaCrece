@@ -59,6 +59,8 @@ public final class DAO_Impl implements DAO {
 
   private final SharedSQLiteStatement __preparedStmtOfIncrementGrowCount;
 
+  private final SharedSQLiteStatement __preparedStmtOfIncrementXpByPlantName;
+
   public DAO_Impl(@NonNull final RoomDatabase __db) {
     this.__db = __db;
     this.__insertionAdapterOfPlant = new EntityInsertionAdapter<Plant>(__db) {
@@ -334,6 +336,14 @@ public final class DAO_Impl implements DAO {
         return _query;
       }
     };
+    this.__preparedStmtOfIncrementXpByPlantName = new SharedSQLiteStatement(__db) {
+      @Override
+      @NonNull
+      public String createQuery() {
+        final String _query = "UPDATE plants SET xp = xp + ? WHERE name = ?";
+        return _query;
+      }
+    };
   }
 
   @Override
@@ -518,6 +528,31 @@ public final class DAO_Impl implements DAO {
       }
     } finally {
       __preparedStmtOfIncrementGrowCount.release(_stmt);
+    }
+  }
+
+  @Override
+  public void incrementXpByPlantName(final String plantName, final int amount) {
+    __db.assertNotSuspendingTransaction();
+    final SupportSQLiteStatement _stmt = __preparedStmtOfIncrementXpByPlantName.acquire();
+    int _argIndex = 1;
+    _stmt.bindLong(_argIndex, amount);
+    _argIndex = 2;
+    if (plantName == null) {
+      _stmt.bindNull(_argIndex);
+    } else {
+      _stmt.bindString(_argIndex, plantName);
+    }
+    try {
+      __db.beginTransaction();
+      try {
+        _stmt.executeUpdateDelete();
+        __db.setTransactionSuccessful();
+      } finally {
+        __db.endTransaction();
+      }
+    } finally {
+      __preparedStmtOfIncrementXpByPlantName.release(_stmt);
     }
   }
 

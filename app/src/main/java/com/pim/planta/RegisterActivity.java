@@ -16,6 +16,7 @@ import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.User;
+import com.pim.planta.models.UserLogged;
 import com.pim.planta.models.UserPlantRelation;
 
 public class RegisterActivity extends NotificationActivity {
@@ -81,6 +82,7 @@ public class RegisterActivity extends NotificationActivity {
                 }
             });
             Toast.makeText(RegisterActivity.this, "Registro exitoso", Toast.LENGTH_SHORT).show();
+            UserLogged.getInstance().setCurrentUser(newUser);
             Intent intent = new Intent(RegisterActivity.this, PlantListActivity.class);
             startActivity(intent);
         });

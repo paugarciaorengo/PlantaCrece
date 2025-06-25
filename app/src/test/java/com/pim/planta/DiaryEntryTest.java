@@ -6,6 +6,8 @@ import com.pim.planta.models.DiaryEntry;
 
 import org.junit.Test;
 
+import android.content.Context;
+
 public class DiaryEntryTest {
 
     @Test
@@ -37,27 +39,27 @@ public class DiaryEntryTest {
     }
 
     @Test
-    public void testEmotionToString() {
+    public void testEmotionToString(Context context) {
         DiaryEntry entry1 = new DiaryEntry("Test Highlight", "Test Annotation", 1, 1, 1672531200000L);
-        assertEquals("Excited", entry1.emotionToString());
+        assertEquals("Excited", entry1.emotionToString(context));
 
         DiaryEntry entry2 = new DiaryEntry("Test Highlight", "Test Annotation", 2, 1, 1672531200000L);
-        assertEquals("Happy", entry2.emotionToString());
+        assertEquals("Happy", entry2.emotionToString(context));
 
         DiaryEntry entry3 = new DiaryEntry("Test Highlight", "Test Annotation", 3, 1, 1672531200000L);
-        assertEquals("Neutral", entry3.emotionToString());
+        assertEquals("Neutral", entry3.emotionToString(context));
 
         DiaryEntry entry4 = new DiaryEntry("Test Highlight", "Test Annotation", 4, 1, 1672531200000L);
-        assertEquals("Sad", entry4.emotionToString());
+        assertEquals("Sad", entry4.emotionToString(context));
 
         DiaryEntry entry5 = new DiaryEntry("Test Highlight", "Test Annotation", 5, 1, 1672531200000L);
-        assertEquals("Very sad", entry5.emotionToString());
+        assertEquals("Very sad", entry5.emotionToString(context));
 
         DiaryEntry entry6 = new DiaryEntry("Test Highlight", "Test Annotation", 0, 1, 1672531200000L);
-        assertEquals("No emotion", entry6.emotionToString());
+        assertEquals("No emotion", entry6.emotionToString(context));
 
         DiaryEntry entry7 = new DiaryEntry("Test Highlight", "Test Annotation", 6, 1, 1672531200000L);
-        assertEquals("No emotion", entry7.emotionToString());
+        assertEquals("No emotion", entry7.emotionToString(context));
     }
     @Test
     public void testGetUserId() {
