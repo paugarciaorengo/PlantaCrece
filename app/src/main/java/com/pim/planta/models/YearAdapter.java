@@ -14,15 +14,17 @@ import com.pim.planta.R;
 
 public class YearAdapter extends RecyclerView.Adapter<YearAdapter.YearViewHolder> {
 
+    private final int maximumYear;
     public int currentYear;
     private int minimumYear;
     public int holderWidth;
     public static final int EMPTY_VIEW_TYPE = 0;
     public static final int YEAR_VIEW_TYPE = 1;
 
-    public YearAdapter(int currentYear, int minimumYear) {
+    public YearAdapter(int currentYear, int minimumYear, int maximumYear) {
         this.currentYear = currentYear;
         this.minimumYear = minimumYear;
+        this.maximumYear = maximumYear;
     }
 
     @NonNull
@@ -34,44 +36,48 @@ public class YearAdapter extends RecyclerView.Adapter<YearAdapter.YearViewHolder
 
     @Override
     public void onBindViewHolder(@NonNull YearViewHolder holder, int position) {
-        if (getItemViewType(position) == YEAR_VIEW_TYPE) {
-            int year = minimumYear + position - 4; // Adjust for empty spaces
+        int year = minimumYear + position - 4;
+
+        if (getItemViewType(position) == YEAR_VIEW_TYPE && year <= maximumYear) {
+            holder.yearTextView.setVisibility(View.VISIBLE);
             holder.yearTextView.setText(String.valueOf(year));
             if (year == currentYear) {
-                // Selected year
-                holder.yearTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24); // Larger text size
-                holder.yearTextView.setTextColor(Color.WHITE); // White text color
+                holder.yearTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 24);
+                holder.yearTextView.setTextColor(Color.WHITE);
             } else {
-                // Other years
-                holder.yearTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16); // Smaller text size
-                holder.yearTextView.setTextColor(Color.LTGRAY); // Light gray text color
+                holder.yearTextView.setTextSize(TypedValue.COMPLEX_UNIT_SP, 16);
+                holder.yearTextView.setTextColor(Color.LTGRAY);
             }
-        }
-        else {
-            // Handle empty spaces (e.g., make the TextView invisible)
+        } else {
+            holder.yearTextView.setText(""); // Evita mostrar años inválidos
             holder.yearTextView.setVisibility(View.INVISIBLE);
-            if (holderWidth > 0) { // Check if holderWidth is set
-                holder.yearTextView.setWidth(holderWidth); // Use holderWidth from YearSelectorButton
+            if (holderWidth > 0) {
+                holder.yearTextView.setWidth(holderWidth);
             } else {
-                // Handle case where holderWidth is not yet set (e.g., set a default width)
-                holder.yearTextView.setWidth(holder.itemView.getContext().getResources().getDimensionPixelSize(R.dimen.year_selector_empty_space_width));
+                holder.yearTextView.setWidth(holder.itemView.getContext().getResources()
+                        .getDimensionPixelSize(R.dimen.year_selector_empty_space_width));
             }
         }
     }
+
     public void setHolderWidth(int holderWidth) {
         this.holderWidth = holderWidth;
-        notifyDataSetChanged(); // Refresh the view
+        notifyDataSetChanged();
     }
+
     @Override
     public int getItemCount() {
-        return (currentYear - minimumYear + 1) + 8; // Total items including 4 empty spaces
+        return (maximumYear - minimumYear + 1) + 8; // +8 for 4 empty slots before/after
     }
+
     @Override
     public int getItemViewType(int position) {
-        if (position < 4 || position >= getItemCount() - 4) { // Check for 2 empty spaces on each side
-            return EMPTY_VIEW_TYPE; // Empty space view type
+        int year = minimumYear + position - 4;
+
+        if (position < 4 || position >= getItemCount() - 4 || year > maximumYear) {
+            return EMPTY_VIEW_TYPE;
         } else {
-            return YEAR_VIEW_TYPE; // Year view type
+            return YEAR_VIEW_TYPE;
         }
     }
 

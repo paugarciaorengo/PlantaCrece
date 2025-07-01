@@ -23,7 +23,6 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
     private List<Plant> plantList;
     private OnItemClickListener onItemClickListener;
     private Typeface aventaFont;
-    private DAO dao;
     private User user;
 
     public PlantAdapter(Context context, List<Plant> plantList, Typeface font, PlantooRepository repository, User user) {
@@ -41,9 +40,9 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
                 parent, false);
         return new PlantViewHolder(view);
     }
+
     @Override
     public void onBindViewHolder(@NonNull PlantViewHolder holder, int position) {
-
         Plant plant = plantList.get(position);
         if (plant.getNickname() != null && !plant.getNickname().isEmpty())
             holder.plantNameTextView.setText(
@@ -54,17 +53,23 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
             );
         else
             holder.plantNameTextView.setText(plant.getName());
+
         holder.plantImageView.setImageResource(plant.getImageResourceId());
         holder.plantDescriptionTextView.setText(plant.getDescription());
+
         if (user != null) {
             DatabaseExecutor.executeAndWait(() -> {
                 try {
-                    int growthCount = Math.max(0, plantooRepository.getGrowCount(user.getId(),
-                            dao.getPlantaByName(plant.getName()).getId()));
-                    Context context = holder.itemView.getContext();
-                    holder.plantGrowthCountTextView.setText(
-                            context.getString(R.string.growth_count_label) + growthCount
-                    );
+                    Plant fullPlant = plantooRepository.getPlantByName(plant.getName());
+                    if (fullPlant != null) {
+                        int growthCount = Math.max(0, plantooRepository.getGrowCount(user.getId(), fullPlant.getId()));
+                        Context context = holder.itemView.getContext();
+                        holder.plantGrowthCountTextView.setText(
+                                context.getString(R.string.growth_count_label) + growthCount
+                        );
+                    } else {
+                        Log.e("PlantAdapter", "Plant not found: " + plant.getName());
+                    }
                 } catch (Exception e) {
                     Log.e("PlantAdapter", "Error getting growth count", e);
                 }
@@ -72,13 +77,14 @@ public class PlantAdapter extends RecyclerView.Adapter<PlantAdapter.PlantViewHol
         } else {
             Log.e("PlantAdapter", "User is null");
         }
+
         holder.itemView.setOnClickListener(v -> {
             if (onItemClickListener != null) {
-                onItemClickListener.onItemClick(plant); // Llamar a la función de la actividad
+                onItemClickListener.onItemClick(plant);
             }
         });
-
     }
+
     @Override
     public int getItemCount() {
         return plantList.size();

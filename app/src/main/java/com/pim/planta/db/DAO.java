@@ -4,6 +4,7 @@ import androidx.lifecycle.LiveData;
 import androidx.room.Dao;
 import androidx.room.Delete;
 import androidx.room.Insert;
+import androidx.room.OnConflictStrategy;
 import androidx.room.Query;
 import androidx.room.Transaction;
 import androidx.room.Update;
@@ -78,4 +79,19 @@ public interface DAO {
 
     @Query("UPDATE plants SET xp = xp + :amount WHERE name = :plantName")
     void incrementXpByPlantName(String plantName, int amount);
+
+    @Query("SELECT emotion FROM `diary-entries` WHERE user_id = :userId AND date = :date LIMIT 1")
+    int getEmotionByUserAndDate(int userId, long date);
+
+    @Query("SELECT annotation FROM `diary-entries` WHERE user_id = :userId AND date = :date LIMIT 1")
+    String getNoteByUserAndDate(int userId, long date);
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    void insertDiaryEntry(DiaryEntry entry);
+
+    @Update
+    void updateDiaryEntry(DiaryEntry entry);
+
+    @Query("SELECT * FROM `diary-entries` WHERE user_id = :userId AND date = :date LIMIT 1")
+    DiaryEntry getDiaryEntryByUserAndDate(int userId, long date);
 }

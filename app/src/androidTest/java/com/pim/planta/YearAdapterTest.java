@@ -31,7 +31,7 @@ public class YearAdapterTest {
     @Before
     public void setup() {
         context = ApplicationProvider.getApplicationContext();
-        yearAdapter = new YearAdapter(2024, 2020);
+        yearAdapter = new YearAdapter(2025, 2020);
     }
 
     @Test

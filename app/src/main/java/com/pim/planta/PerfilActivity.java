@@ -1,8 +1,6 @@
 package com.pim.planta;
 
 import android.Manifest;
-import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
 import android.app.Activity;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
@@ -13,7 +11,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
-import android.graphics.Typeface;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -25,13 +22,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
-import androidx.annotation.NonNull;
-import androidx.core.app.ActivityCompat;
-import androidx.core.content.ContextCompat;
-import androidx.core.content.res.ResourcesCompat;
-
 import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.Legend;
@@ -41,12 +31,14 @@ import com.github.mikephil.charting.data.BarData;
 import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
+import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
+import com.pim.planta.workers.AppUsageWorker;
 
 import java.io.FileNotFoundException;
 import java.io.InputStream;
@@ -56,35 +48,47 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.TimeUnit;
+
+import androidx.activity.result.ActivityResultLauncher;
+import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
+import androidx.core.app.ActivityCompat;
+import androidx.core.content.ContextCompat;
+import androidx.work.PeriodicWorkRequest;
+import androidx.work.WorkManager;
 
 public class PerfilActivity extends NotificationActivity {
     // Constantes
-    private BottomNavigationHelper.Binding bottomNavBinding;
     private static final int REQUEST_CODE_READ_EXTERNAL_STORAGE = 100;
     private static final String PREFS_NAME = "AppUsageData";
     private static final String PLANT_PREFS = "plant_prefs";
     private static final String SELECTED_PLANT_KEY = "selectedPlant";
-    private static final String[] SOCIAL_APPS = {"Instagram", "TikTok", "YouTube", "Twitter", "Facebook"};
-    private static final int[] CHART_COLORS = {
-            Color.parseColor("#004D40"),
-            Color.parseColor("#2E7D32"),
-            Color.parseColor("#4CAF50"),
-            Color.parseColor("#81C784"),
-            Color.parseColor("#A5D6A7")
+    private static final String[] SOCIAL_APPS = {
+            "Instagram", "TikTok", "YouTube", "Twitter", "Facebook"
     };
 
-    // Componentes UI
+    // Colores pastel para las barras
+    private static final int[] CHART_COLORS = {
+            Color.argb(180, 76,175,80),
+            Color.argb(180,139,195,74),
+            Color.argb(180,205,220,57),
+            Color.argb(180,255,241,118),
+            Color.argb(180,255,213,79)
+    };
+
+    // Vistas
     private ImageView profileImageView;
     private TextView userNameTextView;
-    private BarChart barChart;
-    private TextView usageSummaryTextView;
     private TextView creationDateTextView;
     private TextView scientificNameTextView;
     private TextView nicknameTextView;
-    private ImageButton buttonPreviousWeek;
-    private ImageButton buttonNextWeek;
+    private BarChart barChart;
+    private TextView usageSummaryTextView;
+    private ImageButton buttonPreviousWeek, buttonNextWeek;
+    private TextView weekLabel;
 
-    // Datos
+    // Estado interno
     private int currentWeek;
     private Plant plant;
     private DAO dao;
@@ -94,17 +98,30 @@ public class PerfilActivity extends NotificationActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_profile);
+
         initializeComponents();
         setupGalleryLauncher();
         setupWeekNavigation();
         loadPlantInfo();
+
+        // Mostrar etiqueta de semana inicial
+        updateWeekLabel(currentWeek);
+
         updateUI();
-        // Obtener referencia al contenedor de navegación inferior
-        View bottomNavView = findViewById(R.id.bottomNavigation);
-        bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
+
+        // Bottom navigation
+        BottomNavigationHelper.Binding bottomNavBinding =
+                new BottomNavigationHelper.Binding(findViewById(R.id.bottomNavigation));
         BottomNavigationHelper.setup(this, bottomNavBinding, PerfilActivity.class);
+
+        // Programa worker cada 24h
+        PeriodicWorkRequest usageRequest =
+                new PeriodicWorkRequest.Builder(AppUsageWorker.class, 24, TimeUnit.HOURS)
+                        .build();
+        WorkManager.getInstance(this).enqueue(usageRequest);
     }
 
+    /** Debe ser public para no chocar con NotificationActivity */
     @Override
     public void onResume() {
         super.onResume();
@@ -112,21 +129,20 @@ public class PerfilActivity extends NotificationActivity {
     }
 
     private void initializeComponents() {
-        // Inicializar vistas
-        profileImageView = findViewById(R.id.profile_image);
-        userNameTextView = findViewById(R.id.user_name);
-        barChart = findViewById(R.id.bar_chart);
-        usageSummaryTextView = findViewById(R.id.textView4);
-        creationDateTextView = findViewById(R.id.textCreationDate);
+        profileImageView       = findViewById(R.id.profile_image);
+        userNameTextView       = findViewById(R.id.user_name);
+        creationDateTextView   = findViewById(R.id.textCreationDate);
         scientificNameTextView = findViewById(R.id.textScientificName);
-        nicknameTextView = findViewById(R.id.textNickname);
-        buttonPreviousWeek = findViewById(R.id.buttonPreviousWeek);
-        buttonNextWeek = findViewById(R.id.buttonNextWeek);
+        nicknameTextView       = findViewById(R.id.textNickname);
+        barChart               = findViewById(R.id.bar_chart);
+        usageSummaryTextView   = findViewById(R.id.textView4);
+        buttonPreviousWeek     = findViewById(R.id.buttonPreviousWeek);
+        buttonNextWeek         = findViewById(R.id.buttonNextWeek);
+        weekLabel              = findViewById(R.id.textWeekLabel);
 
-        // Configurar listeners
         profileImageView.setOnClickListener(v -> changeProfileImage());
 
-        // Obtener la semana actual
+        // Arranca en la semana actual
         currentWeek = Calendar.getInstance().get(Calendar.WEEK_OF_YEAR);
     }
 
@@ -146,253 +162,248 @@ public class PerfilActivity extends NotificationActivity {
         buttonNextWeek.setOnClickListener(v -> navigateWeek(1));
     }
 
-    private void navigateWeek(int direction) {
-        currentWeek += direction;
-
-        if (currentWeek < 1) currentWeek = 52;
-        if (currentWeek > 52) currentWeek = 1;
-
+    private void navigateWeek(int delta) {
+        // Ajuste circular 1..52
+        currentWeek = ((currentWeek - 1 + delta + 52) % 52) + 1;
+        updateWeekLabel(currentWeek);
         updateGraphAndData(currentWeek);
     }
 
     private void loadPlantInfo() {
-        SharedPreferences sharedPreferences = getSharedPreferences(PLANT_PREFS, MODE_PRIVATE);
-        PlantRepository plantaRepo = PlantRepository.getInstance(this);
-        dao = plantaRepo.getPlantaDAO();
-        String selectedPlantName = sharedPreferences.getString(SELECTED_PLANT_KEY, "");
-
-        if (!selectedPlantName.isEmpty()) {
-            DatabaseExecutor.executeAndWait(() -> {
-                plant = dao.getPlantaByName(selectedPlantName);
-            });
+        SharedPreferences prefs = getSharedPreferences(PLANT_PREFS, MODE_PRIVATE);
+        String name = prefs.getString(SELECTED_PLANT_KEY, "");
+        PlantRepository repo = PlantRepository.getInstance(this);
+        dao = repo.getPlantaDAO();
+        if (!name.isEmpty()) {
+            DatabaseExecutor.executeAndWait(() -> plant = dao.getPlantaByName(name));
         }
     }
 
     private void updateUI() {
-        updateUserInfo();
-        updatePlantInfo();
-        updateGraphAndData(currentWeek);
-    }
-
-    private void updateUserInfo() {
         User user = UserLogged.getInstance().getCurrentUser();
         if (user != null) {
             userNameTextView.setText(user.getUsername());
             creationDateTextView.setText("Bloomed on: " + user.getFormattedCreationDate());
         }
-    }
-
-    private void updatePlantInfo() {
         if (plant != null) {
             scientificNameTextView.setText("Scientific plant name: " + plant.getScientificName());
             nicknameTextView.setText("Plant nickname: " + plant.getNickname());
-        } else {
-            scientificNameTextView.setText("No plant selected");
-            nicknameTextView.setText("No plant selected");
         }
+        updateGraphAndData(currentWeek);
     }
 
     private void updateGraphAndData(int week) {
+        seedDummyUsageData(week);
         initializeGraph(week);
-        updateUsageSummary(week);
+        updateWeeklySummary(week);
     }
 
     private void initializeGraph(int week) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String[] daysOfWeek = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
-        List<BarEntry> barEntries = new ArrayList<>();
+        String[] days = {"Mon","Tue","Wed","Thu","Fri","Sat","Sun"};
+        List<BarEntry> entries = new ArrayList<>();
 
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.WEEK_OF_YEAR, week);
-        calendar.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
-
-        // Obtener datos para cada día de la semana
-        for (int dayIndex = 0; dayIndex < 7; dayIndex++) {
-            String day = daysOfWeek[dayIndex];
-            float[] appUsage = new float[5];
-
-            for (int appIndex = 0; appIndex < 5; appIndex++) {
-                String appKey = "Week" + week + "_" + day + "_" + SOCIAL_APPS[appIndex];
-                appUsage[appIndex] = prefs.getLong(appKey, 0) / 3600000f;
+        for (int i = 0; i < days.length; i++) {
+            float[] vals = new float[SOCIAL_APPS.length];
+            for (int j = 0; j < SOCIAL_APPS.length; j++) {
+                String key = "Week" + week + "_" + days[i] + "_" + SOCIAL_APPS[j];
+                vals[j] = prefs.getLong(key,0L) / 3600000f;
             }
-
-            barEntries.add(new BarEntry(dayIndex, appUsage));
-            calendar.add(Calendar.DAY_OF_YEAR, 1);
+            entries.add(new BarEntry(i, vals));
         }
 
-        // Configurar el gráfico
-        BarDataSet barDataSet = new BarDataSet(barEntries, "App Usage");
-        barDataSet.setStackLabels(SOCIAL_APPS);
-        barDataSet.setColors(CHART_COLORS);
+        BarDataSet set = new BarDataSet(entries, "App Usage");
+        set.setStackLabels(SOCIAL_APPS);
+        set.setDrawValues(false);
+        set.setColors(CHART_COLORS);
 
-        BarData barData = new BarData(barDataSet);
-        barData.setBarWidth(0.5f);
+        BarData data = new BarData(set);
+        data.setBarWidth(0.6f);
 
-        barChart.setData(barData);
-        configureChartAppearance(daysOfWeek);
-        barChart.animateY(1000, Easing.EaseInOutCubic);
-        barChart.invalidate();
-    }
+        barChart.setData(data);
+        barChart.setFitBars(true);
+        barChart.setExtraOffsets(10,10,10,20);
+        barChart.setDrawGridBackground(false);
 
-    private void configureChartAppearance(String[] days) {
-        // Configurar eje X
-        XAxis xAxis = barChart.getXAxis();
-        xAxis.setValueFormatter(new IndexAxisValueFormatter(days));
-        xAxis.setPosition(XAxis.XAxisPosition.BOTTOM);
-        xAxis.setGranularity(1f);
-        xAxis.setDrawGridLines(false);
-        xAxis.setTextSize(12f);
-        xAxis.setTextColor(Color.BLACK);
+        UsageMarkerView mv = new UsageMarkerView(this, R.layout.tooltip_marker_view, SOCIAL_APPS);
+        barChart.setMarker(mv);
 
-        // Configurar eje Y
-        YAxis leftAxis = barChart.getAxisLeft();
-        leftAxis.setAxisMinimum(0f);
-        leftAxis.setTextSize(12f);
-        leftAxis.setTextColor(Color.BLACK);
+        XAxis x = barChart.getXAxis();
+        x.setValueFormatter(new IndexAxisValueFormatter(days));
+        x.setPosition(XAxis.XAxisPosition.BOTTOM);
+        x.setDrawGridLines(false);
+        x.setTextColor(Color.DKGRAY);
+
+        YAxis y = barChart.getAxisLeft();
+        y.setDrawGridLines(true);
+        y.setGridColor(Color.LTGRAY);
+        y.setGridLineWidth(0.5f);
+        y.setValueFormatter(new ValueFormatter() {
+            @Override
+            public String getFormattedValue(float value) {
+                return String.valueOf((int)value);
+            }
+        });
         barChart.getAxisRight().setEnabled(false);
 
-        // Configurar leyenda
         Legend legend = barChart.getLegend();
-        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.BOTTOM);
+        legend.setVerticalAlignment(Legend.LegendVerticalAlignment.TOP);
         legend.setHorizontalAlignment(Legend.LegendHorizontalAlignment.CENTER);
         legend.setOrientation(Legend.LegendOrientation.HORIZONTAL);
         legend.setDrawInside(false);
-        legend.setTextSize(12f);
-        legend.setTextColor(Color.BLACK);
+        legend.setFormSize(8f);
+        legend.setXEntrySpace(6f);
 
-        // Otras configuraciones
-        barChart.setFitBars(true);
         barChart.getDescription().setEnabled(false);
+        barChart.animateY(800);
+
+        int dow = Calendar.getInstance().get(Calendar.DAY_OF_WEEK);
+        int idx = (dow == Calendar.SUNDAY ? 6 : dow - Calendar.MONDAY);
+        barChart.setHighlightFullBarEnabled(true);
+        barChart.highlightValue(idx, 0);
+        barChart.invalidate();
     }
 
-    private void updateUsageSummary(int week) {
+    private void updateWeeklySummary(int week) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        String today = new SimpleDateFormat("EEE", Locale.getDefault()).format(new Date());
-        StringBuilder summaryBuilder = new StringBuilder("\n");
+        long[] totals = new long[SOCIAL_APPS.length];
+        Calendar cal = Calendar.getInstance();
+        cal.set(Calendar.WEEK_OF_YEAR, week);
+        cal.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
 
-        for (String app : SOCIAL_APPS) {
-            String key = "Week" + week + "_" + today + "_" + app;
-            long usage = prefs.getLong(key, 0);
-            summaryBuilder.append(String.format("%-15s %s\n", app + ":", formatTime(usage)));
+        for (int d = 0; d < 7; d++) {
+            String dateKey = new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault())
+                    .format(cal.getTime());
+            for (int i = 0; i < SOCIAL_APPS.length; i++) {
+                totals[i] += prefs.getLong(dateKey + "_" + SOCIAL_APPS[i],0L);
+            }
+            cal.add(Calendar.DAY_OF_YEAR,1);
         }
 
-        usageSummaryTextView.setText(summaryBuilder.toString());
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < SOCIAL_APPS.length; i++) {
+            long ms = totals[i];
+            long h = ms/(1000*60*60);
+            long m = (ms/60000)%60;
+            sb.append(String.format("%-8s %d h %02d min\n", SOCIAL_APPS[i]+":", h, m));
+        }
+        usageSummaryTextView.setText(sb.toString().trim());
+    }
+
+    private void seedDummyUsageData(int week) {
+        SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
+        SharedPreferences.Editor ed = prefs.edit();
+        String[] days = {"Mon","Tue","Wed","Thu","Fri","Sat","Sun"};
+        for (String day: days) {
+            for (String app: SOCIAL_APPS) {
+                long rnd = (long)(Math.random()*4*60*60*1000);
+                ed.putLong("Week"+week+"_"+day+"_"+app, rnd);
+            }
+        }
+        ed.apply();
     }
 
     private void trackAppUsage() {
-        UsageStatsManager usageStatsManager = (UsageStatsManager) getSystemService(USAGE_STATS_SERVICE);
-        if (usageStatsManager == null) return;
+        UsageStatsManager mgr = (UsageStatsManager)getSystemService(USAGE_STATS_SERVICE);
+        if (mgr == null) return;
+        long start = getStartOfDay();
+        long end   = System.currentTimeMillis();
+        List<UsageStats> stats = mgr.queryUsageStats(
+                UsageStatsManager.INTERVAL_DAILY, start, end);
+        if (stats == null) return;
 
-        long startOfDay = getStartOfDay();
-        long endOfDay = System.currentTimeMillis();
-        List<UsageStats> usageStatsList = usageStatsManager.queryUsageStats(
-                UsageStatsManager.INTERVAL_DAILY, startOfDay, endOfDay
-        );
-
-        if (usageStatsList == null) return;
-
-        // Inicializar tiempos de uso
-        long[] appUsageTimes = new long[5];
-        long totalTimeToday = 0;
-
-        // Recopilar datos de uso
-        for (UsageStats stats : usageStatsList) {
-            totalTimeToday += stats.getTotalTimeInForeground();
-
-            switch (stats.getPackageName()) {
-                case "com.instagram.android": appUsageTimes[0] = stats.getTotalTimeInForeground(); break;
-                case "com.zhiliaoapp.musically": appUsageTimes[1] = stats.getTotalTimeInForeground(); break;
-                case "com.google.android.youtube": appUsageTimes[2] = stats.getTotalTimeInForeground(); break;
-                case "com.twitter.android": appUsageTimes[3] = stats.getTotalTimeInForeground(); break;
-                case "com.facebook.katana": appUsageTimes[4] = stats.getTotalTimeInForeground(); break;
+        long[] times = new long[SOCIAL_APPS.length];
+        long total=0;
+        for (UsageStats us: stats) {
+            total += us.getTotalTimeInForeground();
+            switch (us.getPackageName()) {
+                case "com.instagram.android": times[0]=us.getTotalTimeInForeground(); break;
+                case "com.zhiliaoapp.musically": times[1]=us.getTotalTimeInForeground(); break;
+                case "com.google.android.youtube": times[2]=us.getTotalTimeInForeground(); break;
+                case "com.twitter.android": times[3]=us.getTotalTimeInForeground(); break;
+                case "com.facebook.katana": times[4]=us.getTotalTimeInForeground(); break;
             }
         }
-
-        // Guardar datos
-        saveUsageData(appUsageTimes, totalTimeToday);
+        saveUsageData(times, total);
         updateGraphAndData(currentWeek);
     }
 
-    private void saveUsageData(long[] appUsageTimes, long totalTime) {
+    private void saveUsageData(long[] times, long total) {
         SharedPreferences prefs = getSharedPreferences(PREFS_NAME, MODE_PRIVATE);
-        SharedPreferences.Editor editor = prefs.edit();
-        String today = new SimpleDateFormat("EEE", Locale.getDefault()).format(new Date());
-        String weekKey = "Week" + currentWeek + "_" + today + "_";
-
-        editor.putLong(weekKey + "Total", totalTime);
-        for (int i = 0; i < SOCIAL_APPS.length; i++) {
-            editor.putLong(weekKey + SOCIAL_APPS[i], appUsageTimes[i]);
+        SharedPreferences.Editor ed = prefs.edit();
+        String dateKey = new SimpleDateFormat("yyyy-MM-dd",Locale.getDefault())
+                .format(new Date());
+        ed.putLong(dateKey+"_Total", total);
+        for (int i=0;i<SOCIAL_APPS.length;i++) {
+            ed.putLong(dateKey+"_"+SOCIAL_APPS[i], times[i]);
         }
-        editor.apply();
+        ed.apply();
     }
 
+    /** Abre la galería */
     private void changeProfileImage() {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
-                    != PackageManager.PERMISSION_GRANTED) {
-                ActivityCompat.requestPermissions(
-                        this,
-                        new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                        REQUEST_CODE_READ_EXTERNAL_STORAGE
-                );
-            } else {
-                openGallery();
-            }
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q
+                && ContextCompat.checkSelfPermission(this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            ActivityCompat.requestPermissions(
+                    this,
+                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
+                    REQUEST_CODE_READ_EXTERNAL_STORAGE
+            );
         } else {
             openGallery();
         }
     }
 
     private void openGallery() {
-        Intent intent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
-        galleryLauncher.launch(intent);
+        Intent i = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        galleryLauncher.launch(i);
     }
 
-    private void handleImageSelection(Uri imageUri) {
+    /** Recoge el Uri seleccionado */
+    private void handleImageSelection(Uri uri) {
         try {
-            InputStream inputStream = getContentResolver().openInputStream(imageUri);
-            Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-            profileImageView.setImageBitmap(bitmap);
+            InputStream is = getContentResolver().openInputStream(uri);
+            Bitmap bmp = BitmapFactory.decodeStream(is);
+            profileImageView.setImageBitmap(bmp);
         } catch (FileNotFoundException e) {
-            showToast("Error loading image");
-            Log.e("PerfilActivity", "Error loading image", e);
+            Toast.makeText(this,"Error loading image",Toast.LENGTH_SHORT).show();
+            Log.e("PerfilActivity","handleImageSelection",e);
         }
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == REQUEST_CODE_READ_EXTERNAL_STORAGE &&
-                grantResults.length > 0 &&
-                grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+    public void onRequestPermissionsResult(int req, @NonNull String[] perms, @NonNull int[] grants) {
+        super.onRequestPermissionsResult(req, perms, grants);
+        if (req == REQUEST_CODE_READ_EXTERNAL_STORAGE
+                && grants.length>0
+                && grants[0]==PackageManager.PERMISSION_GRANTED) {
             openGallery();
         } else {
-            showToast("Permission denied");
+            Toast.makeText(this,"Permission denied",Toast.LENGTH_SHORT).show();
         }
     }
 
+    /** Calcula el lunes de hoy en ms */
     private long getStartOfDay() {
-        Calendar calendar = Calendar.getInstance();
-        calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
-        calendar.set(Calendar.SECOND, 0);
-        calendar.set(Calendar.MILLISECOND, 0);
-        return calendar.getTimeInMillis();
+        Calendar c = Calendar.getInstance();
+        c.set(Calendar.HOUR_OF_DAY,0);
+        c.set(Calendar.MINUTE,0);
+        c.set(Calendar.SECOND,0);
+        c.set(Calendar.MILLISECOND,0);
+        return c.getTimeInMillis();
     }
 
-    private String formatTime(long milliseconds) {
-        long seconds = milliseconds / 1000;
-        long minutes = seconds / 60;
-        long hours = minutes / 60;
-        minutes = minutes % 60;
-        return String.format("%d h %02d min", hours, minutes);
-    }
-
-    private void navigateTo(Class<?> cls) {
-        startActivity(new Intent(this, cls));
-    }
-
-    private void showToast(String message) {
-        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    /** Muestra rango “dd MMM – dd MMM” en weekLabel */
+    private void updateWeekLabel(int weekOfYear) {
+        Calendar c = Calendar.getInstance(Locale.getDefault());
+        c.set(Calendar.WEEK_OF_YEAR, weekOfYear);
+        c.set(Calendar.DAY_OF_WEEK, Calendar.MONDAY);
+        Date start = c.getTime();
+        Calendar c2 = (Calendar)c.clone();
+        c2.add(Calendar.DAY_OF_YEAR,6);
+        Date end = c2.getTime();
+        SimpleDateFormat fmt = new SimpleDateFormat("dd MMM",Locale.getDefault());
+        weekLabel.setText(fmt.format(start)+" – "+fmt.format(end));
     }
 }

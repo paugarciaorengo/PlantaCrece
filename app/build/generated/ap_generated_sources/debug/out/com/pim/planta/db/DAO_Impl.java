@@ -41,6 +41,8 @@ public final class DAO_Impl implements DAO {
 
   private final EntityInsertionAdapter<UserPlantRelation> __insertionAdapterOfUserPlantRelation;
 
+  private final EntityInsertionAdapter<DiaryEntry> __insertionAdapterOfDiaryEntry_1;
+
   private final EntityDeletionOrUpdateAdapter<Plant> __deletionAdapterOfPlant;
 
   private final EntityDeletionOrUpdateAdapter<DiaryEntry> __deletionAdapterOfDiaryEntry;
@@ -170,6 +172,32 @@ public final class DAO_Impl implements DAO {
         statement.bindLong(1, entity.userId);
         statement.bindLong(2, entity.plantId);
         statement.bindLong(3, entity.growCount);
+      }
+    };
+    this.__insertionAdapterOfDiaryEntry_1 = new EntityInsertionAdapter<DiaryEntry>(__db) {
+      @Override
+      @NonNull
+      protected String createQuery() {
+        return "INSERT OR REPLACE INTO `diary-entries` (`id`,`highlight`,`annotation`,`emotion`,`user_id`,`date`) VALUES (nullif(?, 0),?,?,?,?,?)";
+      }
+
+      @Override
+      protected void bind(@NonNull final SupportSQLiteStatement statement,
+          final DiaryEntry entity) {
+        statement.bindLong(1, entity.getId());
+        if (entity.getHighlight() == null) {
+          statement.bindNull(2);
+        } else {
+          statement.bindString(2, entity.getHighlight());
+        }
+        if (entity.getAnnotation() == null) {
+          statement.bindNull(3);
+        } else {
+          statement.bindString(3, entity.getAnnotation());
+        }
+        statement.bindLong(4, entity.getEmotion());
+        statement.bindLong(5, entity.getUser_id());
+        statement.bindLong(6, entity.getDate());
       }
     };
     this.__deletionAdapterOfPlant = new EntityDeletionOrUpdateAdapter<Plant>(__db) {
@@ -395,6 +423,18 @@ public final class DAO_Impl implements DAO {
   }
 
   @Override
+  public void insertDiaryEntry(final DiaryEntry entry) {
+    __db.assertNotSuspendingTransaction();
+    __db.beginTransaction();
+    try {
+      __insertionAdapterOfDiaryEntry_1.insert(entry);
+      __db.setTransactionSuccessful();
+    } finally {
+      __db.endTransaction();
+    }
+  }
+
+  @Override
   public void delete(final Plant planta) {
     __db.assertNotSuspendingTransaction();
     __db.beginTransaction();
@@ -472,6 +512,18 @@ public final class DAO_Impl implements DAO {
     __db.beginTransaction();
     try {
       __updateAdapterOfUser.handle(usuario);
+      __db.setTransactionSuccessful();
+    } finally {
+      __db.endTransaction();
+    }
+  }
+
+  @Override
+  public void updateDiaryEntry(final DiaryEntry entry) {
+    __db.assertNotSuspendingTransaction();
+    __db.beginTransaction();
+    try {
+      __updateAdapterOfDiaryEntry.handle(entry);
       __db.setTransactionSuccessful();
     } finally {
       __db.endTransaction();
@@ -1111,6 +1163,109 @@ public final class DAO_Impl implements DAO {
         _statement.release();
       }
     });
+  }
+
+  @Override
+  public int getEmotionByUserAndDate(final int userId, final long date) {
+    final String _sql = "SELECT emotion FROM `diary-entries` WHERE user_id = ? AND date = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, userId);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, date);
+    __db.assertNotSuspendingTransaction();
+    final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+    try {
+      final int _result;
+      if (_cursor.moveToFirst()) {
+        _result = _cursor.getInt(0);
+      } else {
+        _result = 0;
+      }
+      return _result;
+    } finally {
+      _cursor.close();
+      _statement.release();
+    }
+  }
+
+  @Override
+  public String getNoteByUserAndDate(final int userId, final long date) {
+    final String _sql = "SELECT annotation FROM `diary-entries` WHERE user_id = ? AND date = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, userId);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, date);
+    __db.assertNotSuspendingTransaction();
+    final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+    try {
+      final String _result;
+      if (_cursor.moveToFirst()) {
+        if (_cursor.isNull(0)) {
+          _result = null;
+        } else {
+          _result = _cursor.getString(0);
+        }
+      } else {
+        _result = null;
+      }
+      return _result;
+    } finally {
+      _cursor.close();
+      _statement.release();
+    }
+  }
+
+  @Override
+  public DiaryEntry getDiaryEntryByUserAndDate(final int userId, final long date) {
+    final String _sql = "SELECT * FROM `diary-entries` WHERE user_id = ? AND date = ? LIMIT 1";
+    final RoomSQLiteQuery _statement = RoomSQLiteQuery.acquire(_sql, 2);
+    int _argIndex = 1;
+    _statement.bindLong(_argIndex, userId);
+    _argIndex = 2;
+    _statement.bindLong(_argIndex, date);
+    __db.assertNotSuspendingTransaction();
+    final Cursor _cursor = DBUtil.query(__db, _statement, false, null);
+    try {
+      final int _cursorIndexOfId = CursorUtil.getColumnIndexOrThrow(_cursor, "id");
+      final int _cursorIndexOfHighlight = CursorUtil.getColumnIndexOrThrow(_cursor, "highlight");
+      final int _cursorIndexOfAnnotation = CursorUtil.getColumnIndexOrThrow(_cursor, "annotation");
+      final int _cursorIndexOfEmotion = CursorUtil.getColumnIndexOrThrow(_cursor, "emotion");
+      final int _cursorIndexOfUserId = CursorUtil.getColumnIndexOrThrow(_cursor, "user_id");
+      final int _cursorIndexOfDate = CursorUtil.getColumnIndexOrThrow(_cursor, "date");
+      final DiaryEntry _result;
+      if (_cursor.moveToFirst()) {
+        final String _tmpHighlight;
+        if (_cursor.isNull(_cursorIndexOfHighlight)) {
+          _tmpHighlight = null;
+        } else {
+          _tmpHighlight = _cursor.getString(_cursorIndexOfHighlight);
+        }
+        final String _tmpAnnotation;
+        if (_cursor.isNull(_cursorIndexOfAnnotation)) {
+          _tmpAnnotation = null;
+        } else {
+          _tmpAnnotation = _cursor.getString(_cursorIndexOfAnnotation);
+        }
+        final int _tmpEmotion;
+        _tmpEmotion = _cursor.getInt(_cursorIndexOfEmotion);
+        final int _tmpUser_id;
+        _tmpUser_id = _cursor.getInt(_cursorIndexOfUserId);
+        final long _tmpDate;
+        _tmpDate = _cursor.getLong(_cursorIndexOfDate);
+        _result = new DiaryEntry(_tmpHighlight,_tmpAnnotation,_tmpEmotion,_tmpUser_id,_tmpDate);
+        final int _tmpId;
+        _tmpId = _cursor.getInt(_cursorIndexOfId);
+        _result.setId(_tmpId);
+      } else {
+        _result = null;
+      }
+      return _result;
+    } finally {
+      _cursor.close();
+      _statement.release();
+    }
   }
 
   @NonNull

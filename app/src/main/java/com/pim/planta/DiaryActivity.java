@@ -1,337 +1,226 @@
 package com.pim.planta;
 
-import android.animation.ObjectAnimator;
-import android.animation.PropertyValuesHolder;
-import android.annotation.SuppressLint;
-import android.content.Intent;
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-
-import androidx.recyclerview.widget.LinearLayoutManager;
-import androidx.recyclerview.widget.RecyclerView;
+import android.widget.Toast;
 
 import com.pim.planta.db.DatabaseExecutor;
-import com.pim.planta.db.PlantRepository;
+import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.models.CalendarDraw;
 import com.pim.planta.models.DiaryEntry;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
-import com.pim.planta.models.YearAdapter;
 import com.pim.planta.models.YearSelectorButton;
 
-import java.time.Instant;
+import java.text.SimpleDateFormat;
 import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
+import java.util.Date;
 import java.util.List;
 import java.util.Locale;
 
 public class DiaryActivity extends NotificationActivity {
-    private BottomNavigationHelper.Binding bottomNavBinding;
-    private static final DateTimeFormatter DATE_FORMATTER =
-            DateTimeFormatter.ofPattern("dd MMM yyyy", Locale.getDefault());
 
-    private CalendarDraw calendarDraw;
-    private PlantRepository plantRepo;
-    private List<DiaryEntry> diaryEntries;
-    private YearSelectorButton yearSelectorButton;
-    private ImageButton previousMonthButton, nextMonthButton;
     private TextView dateTextView;
-    private int selectedEmotion = -1;
-    private EditText highlightInput, annotationInput;
-    private List<ImageView> emotionImages;
-    private DiaryEntry currentDiaryEntry;
-    private long dateInMillis;
+    private EditText noteEditText;
+    private EditText highlightEditText;
+    private LinearLayout emotionLayout;
+    private PlantooRepository plantooRepository;
+    private User currentUser;
 
-    @SuppressLint("ClickableViewAccessibility")
+    private int selectedEmotionCode = 0;
+    private CalendarDraw calendarDraw;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_diary);
-        // Obtener referencia al contenedor de navegación inferior
-        View bottomNavView = findViewById(R.id.bottomNavigation);
-        bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
 
-        // Configurar navegación
-        BottomNavigationHelper.setup(this, bottomNavBinding, DiaryActivity.class);
-
-        setupUiComponents();
-        setupEmotionSelection();
-        setupCalendarInteraction();
-        loadInitialData();
-    }
-
-    private void setupUiComponents() {
-        calendarDraw = findViewById(R.id.calendar_draw);
-        dateTextView = findViewById(R.id.dateTextView);
-        previousMonthButton = findViewById(R.id.previousMonthButton);
-        nextMonthButton = findViewById(R.id.nextMonthButton);
-        highlightInput = findViewById(R.id.highlightInput);
-        annotationInput = findViewById(R.id.annotationInput);
-        Button saveButton = findViewById(R.id.buttonSaveEntry);
-
-        plantRepo = PlantRepository.getInstance(this);
-        calendarDraw.setVisibility(View.VISIBLE);
-
-        previousMonthButton.setOnClickListener(v -> calendarDraw.prevMonth());
-        nextMonthButton.setOnClickListener(v -> calendarDraw.nextMonth());
-        saveButton.setOnClickListener(v -> saveDiaryEntry());
-    }
-
-    private void setupEmotionSelection() {
-        emotionImages = Arrays.asList(
-                findViewById(R.id.excitedImage),
-                findViewById(R.id.happyImage),
-                findViewById(R.id.neutralImage),
-                findViewById(R.id.sadImage),
-                findViewById(R.id.verySadImage)
-        );
-
-        for (ImageView image : emotionImages) {
-            image.setAlpha(0.5f);
-            image.setOnClickListener(this::onEmotionClicked);
-        }
-    }
-
-    private void onEmotionClicked(View v) {
-        ImageView selectedImage = (ImageView) v;
-        selectedImage.setAlpha(1.0f);
-
-        for (ImageView image : emotionImages) {
-            if (image != selectedImage) {
-                image.setAlpha(0.5f);
-            }
-        }
-        selectedEmotion = emotionImages.indexOf(selectedImage);
-    }
-
-    private void setupCalendarInteraction() {
-        yearSelectorButton = findViewById(R.id.year_selector_button);
-        yearSelectorButton.setCalendarDraw(calendarDraw);
-
-        yearSelectorButton.addOnLayoutChangeListener(new View.OnLayoutChangeListener() {
-            @Override
-            public void onLayoutChange(View v, int left, int top, int right, int bottom,
-                                       int oldLeft, int oldTop, int oldRight, int oldBottom) {
-                setupYearSelector();
-                yearSelectorButton.removeOnLayoutChangeListener(this);
-            }
-        });
-
-        calendarDraw.highlightDay(LocalDate.now());
-        updateDateDisplay(LocalDate.now());
-        dateInMillis = convertToEpochMillis(LocalDate.now());
-
-        calendarDraw.setOnTouchListener((view, motionEvent) -> {
-            if (motionEvent.getAction() == MotionEvent.ACTION_UP) {
-                handleCalendarTouch(motionEvent);
-            }
-            return true;
-        });
-    }
-
-    private void setupYearSelector() {
-        RecyclerView yearRecyclerView = yearSelectorButton.yearRecyclerView;
-        YearAdapter yearAdapter = new YearAdapter(
-                yearSelectorButton.getCurrentYear(),
-                yearSelectorButton.getMinimumYear()
-        );
-
-        yearRecyclerView.setAdapter(yearAdapter);
-        yearRecyclerView.setLayoutManager(new LinearLayoutManager(
-                DiaryActivity.this,
-                LinearLayoutManager.HORIZONTAL,
-                false
-        ));
-        yearRecyclerView.setVisibility(View.VISIBLE);
-    }
-
-    private void handleCalendarTouch(MotionEvent motionEvent) {
-        int dayClicked = calendarDraw.getDayFromCoordinates(motionEvent.getX(), motionEvent.getY());
-
-        if (dayClicked != -1) {
-            handleDaySelection(dayClicked);
-        } else {
-            reloadCurrentDay();
-        }
-    }
-
-    private void handleDaySelection(int dayClicked) {
-        if (isFutureDay(dayClicked)) return;
-
-        LocalDate selectedDate = LocalDate.of(
-                calendarDraw.getCurrentYear(),
-                calendarDraw.getCurrentMonth(),
-                dayClicked
-        );
-
-        calendarDraw.highlightDay(selectedDate);
-        updateDateDisplay(selectedDate);
-        dateInMillis = convertToEpochMillis(selectedDate);
-        loadDiaryEntry(dateInMillis);
-    }
-
-    private boolean isFutureDay(int day) {
-        return day > LocalDate.now().getDayOfMonth() &&
-                calendarDraw.getCurrentMonth() == LocalDate.now().getMonthValue() &&
-                calendarDraw.getCurrentYear() == LocalDate.now().getYear();
-    }
-
-    private void reloadCurrentDay() {
-        dateInMillis = convertToEpochMillis(LocalDate.now());
-        loadDiaryEntry(dateInMillis);
-    }
-
-    private void updateDateDisplay(LocalDate date) {
-        dateTextView.setText(DATE_FORMATTER.format(date));
-    }
-
-    private long convertToEpochMillis(LocalDate date) {
-        return date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
-    }
-
-    private void loadInitialData() {
-        loadEmotions();
-        loadDiaryEntry(dateInMillis);
-    }
-
-    private void saveDiaryEntry() {
-        if (currentDiaryEntry != null) {
-            updateExistingEntry();
-        } else {
-            createNewEntry();
-        }
-    }
-
-    private void updateExistingEntry() {
-        currentDiaryEntry.setHighlight(highlightInput.getText().toString());
-        currentDiaryEntry.setAnnotation(annotationInput.getText().toString());
-        currentDiaryEntry.setEmotion(selectedEmotion);
-        new SaveDiaryEntryTask().execute(currentDiaryEntry);
-    }
-
-    private void createNewEntry() {
-        LocalDate day = LocalDate.of(
-                calendarDraw.getCurrentYear(),
-                calendarDraw.getCurrentMonth(),
-                calendarDraw.getCurrentDay().getDayOfMonth()
-        );
-
-        DiaryEntry entry = new DiaryEntry(
-                highlightInput.getText().toString(),
-                annotationInput.getText().toString(),
-                selectedEmotion,
-                UserLogged.getInstance().getCurrentUser().getId(),
-                convertToEpochMillis(day)
-        );
-        new SaveDiaryEntryTask().execute(entry);
-    }
-
-    private void loadEmotions() {
-        User user = UserLogged.getInstance().getCurrentUser();
-        DatabaseExecutor.execute(() -> {
-            diaryEntries = plantRepo.getPlantaDAO().getEntradasByUserId(user.getId());
-            if (!diaryEntries.isEmpty()) {
-                calendarDraw.setDiaryEntries(diaryEntries);
-            }
-        });
-    }
-
-    private void loadDiaryEntry(long date) {
-        new LoadDiaryEntryTask().execute(date);
-    }
-
-    private void loadDiaryEntryUI(DiaryEntry entry) {
-        LocalDate selectedDate = Instant.ofEpochMilli(dateInMillis)
-                .atZone(ZoneId.systemDefault())
-                .toLocalDate();
-
-        if (entry == null) {
-            if (!selectedDate.isAfter(LocalDate.now())) {
-                resetEntry();
-            }
+        currentUser = UserLogged.getInstance().getCurrentUser();
+        if (currentUser == null) {
+            Toast.makeText(this, "Usuario no encontrado. Por favor, inicia sesión.", Toast.LENGTH_LONG).show();
+            finish();
             return;
         }
 
-        if (entry.getHighlight() != null || entry.getAnnotation() != null || entry.getEmotion() != -1) {
-            selectedEmotion = entry.getEmotion();
-            updateEmotionImages();
-            highlightInput.setText(entry.getHighlight());
-            annotationInput.setText(entry.getAnnotation());
-        }
+        plantooRepository = PlantooRepository.getInstance(this);
+
+        dateTextView = findViewById(R.id.dateTextView);
+        noteEditText = findViewById(R.id.annotationInput);
+        highlightEditText = findViewById(R.id.highlightInput);
+        emotionLayout = findViewById(R.id.emotionsLayout);
+        Button saveButton = findViewById(R.id.buttonSaveEntry);
+
+        calendarDraw = findViewById(R.id.calendar_draw);
+        YearSelectorButton yearSelector = findViewById(R.id.year_selector_button);
+        yearSelector.setCalendarDraw(calendarDraw);
+        yearSelector.setOnYearSelectedListener(year -> {
+            calendarDraw.setCurrentYear(year);
+            reloadEntriesForCurrentMonth();
+        });
+
+        calendarDraw.setOnMonthChangeListener(() -> reloadEntriesForCurrentMonth());
+
+        String today = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(new Date());
+        dateTextView.setText(today);
+
+        setupEmotionButtons();
+        saveButton.setOnClickListener(v -> saveDiaryEntry(dateTextView.getText().toString()));
+
+        View bottomNavView = findViewById(R.id.bottomNavigation);
+        BottomNavigationHelper.Binding bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
+        BottomNavigationHelper.setup(this, bottomNavBinding, DiaryActivity.class);
+
+        loadExistingEntry(today);
+        setupCalendarTouchListener();
+        reloadEntriesForCurrentMonth();
+
+        ImageView prevMonthBtn = findViewById(R.id.previousMonthButton);
+        ImageView nextMonthBtn = findViewById(R.id.nextMonthButton);
+
+        prevMonthBtn.setOnClickListener(v -> {
+            calendarDraw.prevMonth();
+            reloadEntriesForCurrentMonth(); // Actualiza las entradas para el mes nuevo
+        });
+
+        nextMonthBtn.setOnClickListener(v -> {
+            calendarDraw.nextMonth();
+            reloadEntriesForCurrentMonth(); // Igual para siguiente mes
+        });
     }
 
-    private void updateEmotionImages() {
-        for (int i = 0; i < emotionImages.size(); i++) {
-            emotionImages.get(i).setAlpha(i == selectedEmotion ? 1.0f : 0.5f);
-        }
-    }
-
-    private void resetEntry() {
-        highlightInput.setText("");
-        annotationInput.setText("");
-        selectedEmotion = -1;
-        for (ImageView image : emotionImages) {
-            image.setAlpha(0.5f);
-        }
-    }
-
-    private class LoadDiaryEntryTask extends AsyncTask<Long, Void, DiaryEntry> {
-        @Override
-        protected DiaryEntry doInBackground(Long... params) {
-            long date = params[0];
-            LocalDate selectedDate = Instant.ofEpochMilli(date)
-                    .atZone(ZoneId.systemDefault())
-                    .toLocalDate();
-
-            if (selectedDate.isAfter(LocalDate.now())) {
-                return null;
+    private void setupCalendarTouchListener() {
+        calendarDraw.setOnTouchListener((v, event) -> {
+            if (event.getAction() == MotionEvent.ACTION_DOWN) {
+                int clickedDay = calendarDraw.getDayFromCoordinates(event.getX(), event.getY());
+                if (clickedDay != -1) {
+                    LocalDate selectedDate = LocalDate.of(
+                            calendarDraw.getCurrentYear(),
+                            calendarDraw.getCurrentMonth(),
+                            clickedDay
+                    );
+                    calendarDraw.highlightDay(selectedDate);
+                    dateTextView.setText(selectedDate.toString());
+                    loadExistingEntry(selectedDate.toString());
+                }
             }
-            return plantRepo.getPlantaDAO().getEntradaByUserIdAndDate(
-                    UserLogged.getInstance().getCurrentUser().getId(),
-                    date
-            );
-        }
+            return false;
+        });
+    }
 
-        @Override
-        protected void onPostExecute(DiaryEntry entry) {
-            currentDiaryEntry = entry;
-            loadDiaryEntryUI(entry);
-            loadEmotions();
-            calendarDraw.invalidate();
+    private void setupEmotionButtons() {
+        ImageView excited = findViewById(R.id.excitedImage);
+        ImageView happy = findViewById(R.id.happyImage);
+        ImageView neutral = findViewById(R.id.neutralImage);
+        ImageView sad = findViewById(R.id.sadImage);
+        ImageView verySad = findViewById(R.id.verySadImage);
+
+        View.OnClickListener listener = v -> {
+            resetEmotionHighlights();
+            v.setBackgroundResource(R.drawable.selected_emotion_border);
+            int id = v.getId();
+            if (id == R.id.excitedImage) {
+                selectedEmotionCode = 1;
+            } else if (id == R.id.happyImage) {
+                selectedEmotionCode = 2;
+            } else if (id == R.id.neutralImage) {
+                selectedEmotionCode = 3;
+            } else if (id == R.id.sadImage) {
+                selectedEmotionCode = 4;
+            } else if (id == R.id.verySadImage) {
+                selectedEmotionCode = 5;
+            }
+            Toast.makeText(this, "Emoción seleccionada", Toast.LENGTH_SHORT).show();
+        };
+
+        excited.setOnClickListener(listener);
+        happy.setOnClickListener(listener);
+        neutral.setOnClickListener(listener);
+        sad.setOnClickListener(listener);
+        verySad.setOnClickListener(listener);
+    }
+
+    private void resetEmotionHighlights() {
+        for (int i = 0; i < emotionLayout.getChildCount(); i++) {
+            View child = emotionLayout.getChildAt(i);
+            child.setBackground(null);
         }
     }
 
-    private class SaveDiaryEntryTask extends AsyncTask<DiaryEntry, Void, Void> {
-        @Override
-        protected Void doInBackground(DiaryEntry... entries) {
-            DiaryEntry entry = entries[0];
-            DiaryEntry existingEntry = plantRepo.getPlantaDAO().getEntradaByUserIdAndDate(
-                    entry.getUserId(),
-                    entry.getDate()
-            );
+    private void saveDiaryEntry(String date) {
+        String note = noteEditText.getText().toString().trim();
+        String highlight = highlightEditText.getText().toString().trim();
 
-            if (existingEntry != null) {
-                entry.setId(existingEntry.getId());
-                plantRepo.getPlantaDAO().update(entry);
-            } else {
-                plantRepo.getPlantaDAO().insert(entry);
+        if (selectedEmotionCode == 0 && note.isEmpty() && highlight.isEmpty()) {
+            Toast.makeText(this, "Debes seleccionar una emoción o escribir algo", Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        DatabaseExecutor.execute(() -> {
+            plantooRepository.insertDiaryEntry(currentUser.getId(), selectedEmotionCode, highlight, note, date);
+            runOnUiThread(() -> {
+                Toast.makeText(this, "Entrada guardada", Toast.LENGTH_SHORT).show();
+                reloadEntriesForCurrentMonth();
+            });
+        });
+    }
+
+    private void loadExistingEntry(String date) {
+        DatabaseExecutor.execute(() -> {
+            int emotion = plantooRepository.getEmotionCodeByUserAndDate(currentUser.getId(), date);
+            String annotation = plantooRepository.getNoteByUserAndDate(currentUser.getId(), date);
+            String highlight = plantooRepository.getHighlightByUserAndDate(currentUser.getId(), date);
+
+            runOnUiThread(() -> {
+                selectedEmotionCode = emotion;
+                highlightEditText.setText(highlight != null ? highlight : "");
+                noteEditText.setText(annotation != null ? annotation : "");
+                highlightSelectedEmotion();
+            });
+        });
+    }
+
+    private void highlightSelectedEmotion() {
+        resetEmotionHighlights();
+
+        int id = 0;
+        switch (selectedEmotionCode) {
+            case 1:
+                id = R.id.excitedImage;
+                break;
+            case 2:
+                id = R.id.happyImage;
+                break;
+            case 3:
+                id = R.id.neutralImage;
+                break;
+            case 4:
+                id = R.id.sadImage;
+                break;
+            case 5:
+                id = R.id.verySadImage;
+                break;
+        }
+
+        if (id != 0) {
+            View view = findViewById(id);
+            if (view != null) {
+                view.setBackgroundResource(R.drawable.selected_emotion_border);
             }
-            return null;
         }
+    }
 
-        @Override
-        protected void onPostExecute(Void aVoid) {
-            loadEmotions();
-            calendarDraw.invalidate();
-        }
+    private void reloadEntriesForCurrentMonth() {
+        int year = calendarDraw.getCurrentYear();
+        int month = calendarDraw.getCurrentMonth();
+        DatabaseExecutor.execute(() -> {
+            List<DiaryEntry> entries = plantooRepository.getEntriesByUserAndMonth(currentUser.getId(), year, month);
+            runOnUiThread(() -> calendarDraw.setDiaryEntries(entries));
+        });
     }
 }

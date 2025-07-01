@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <dimen name="year_selector_empty_space_width">25dp</dimen> <!-- Adjust as needed -->
+    <dimen name="year_selector_empty_space_width">60dp</dimen> <!-- Adjust as needed -->
 </resources>
