@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -14,9 +14,12 @@ import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
+import com.pim.planta.workers.NotificationWorker;
 
 import java.util.concurrent.TimeUnit;
 

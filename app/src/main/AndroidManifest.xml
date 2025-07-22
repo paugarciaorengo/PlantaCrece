@@ -7,7 +7,7 @@
         tools:ignore="ProtectedPermissions" />
 
     <application
-        android:name=".PlantaApplication"
+        android:name=".base.PlantaApplication"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -18,15 +18,15 @@
         android:theme="@style/Theme.Planta"
         tools:targetApi="31">
         <activity
-            android:name=".LoginActivity"
+            android:name=".ui.activity.LoginActivity"
             android:exported="true" />
 
         <activity
-            android:name=".RegisterActivity"
+            android:name=".ui.activity.RegisterActivity"
             android:exported="true" />
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.activity.MainActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -36,24 +36,37 @@
         </activity>
 
         <activity
-            android:name=".JardinActivity"
+            android:name=".ui.activity.JardinActivity"
             android:exported="true" />
 
         <activity
-            android:name=".PlantListActivity"
+            android:name=".ui.activity.PlantListActivity"
             android:exported="true" />
 
         <activity
-            android:name=".PerfilActivity"
+            android:name=".ui.activity.PerfilActivity"
             android:exported="true" />
 
         <activity
-            android:name=".DiaryActivity"
+            android:name=".ui.activity.DiaryActivity"
             android:exported="true" />
 
         <activity
-            android:name=".InvernaderoActivity"
+            android:name=".ui.activity.InvernaderoActivity"
             android:exported="true" />
+
+        <activity
+            android:name=".ui.activity.SettingsActivity"
+            android:label="Ajustes"
+            android:parentActivityName=".ui.activity.MainActivity">
+            <!-- Up button -->
+            <meta-data
+                android:name="android.support.PARENT_ACTIVITY"
+                android:value=".ui.activity.MainActivity"/>
+        </activity>
+
+        <activity android:name=".ui.activity.AppSelectionActivity" />
+
 
         <provider
             android:name="androidx.startup.InitializationProvider"

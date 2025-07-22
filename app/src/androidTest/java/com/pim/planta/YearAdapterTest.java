@@ -14,7 +14,7 @@ import android.widget.TextView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.pim.planta.models.YearAdapter;
+import com.pim.planta.ui.adapters.YearAdapter;
 
 import org.junit.Before;
 import org.junit.Test;

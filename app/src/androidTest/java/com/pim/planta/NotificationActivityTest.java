@@ -13,6 +13,8 @@ import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
+import com.pim.planta.base.NotificationActivity;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;

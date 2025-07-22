@@ -1,10 +1,9 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.Manifest;
 import android.app.Activity;
 import android.app.usage.UsageStats;
 import android.app.usage.UsageStatsManager;
-import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
@@ -16,13 +15,11 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
-import android.view.View;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.github.mikephil.charting.animation.Easing;
 import com.github.mikephil.charting.charts.BarChart;
 import com.github.mikephil.charting.components.Legend;
 import com.github.mikephil.charting.components.XAxis;
@@ -32,6 +29,10 @@ import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.pim.planta.helpers.BottomNavigationHelper;
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
+import com.pim.planta.ui.components.UsageMarkerView;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
@@ -108,6 +109,12 @@ public class PerfilActivity extends NotificationActivity {
         updateWeekLabel(currentWeek);
 
         updateUI();
+
+        ImageButton buttonSettings = findViewById(R.id.buttonSettings);
+        buttonSettings.setOnClickListener(v -> {
+            Intent intent = new Intent(PerfilActivity.this, SettingsActivity.class);
+            startActivity(intent);
+        });
 
         // Bottom navigation
         BottomNavigationHelper.Binding bottomNavBinding =

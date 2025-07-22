@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Las etiquetas que verá el usuario -->
+    <string-array name="monitor_entries">
+        <item>Instagram</item>
+        <item>TikTok</item>
+        <item>YouTube</item>
+        <item>Twitter</item>
+        <item>Facebook</item>
+    </string-array>
+
+    <!-- Los valores internos (por ejemplo, el package name o clave) -->
+    <string-array name="monitor_values">
+        <item>com.instagram.android</item>
+        <item>com.zhiliaoapp.musically</item>
+        <item>com.google.android.youtube</item>
+        <item>com.twitter.android</item>
+        <item>com.facebook.katana</item>
+    </string-array>
+</resources>

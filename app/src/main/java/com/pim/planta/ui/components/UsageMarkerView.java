@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.components;
 
 import android.content.Context;
 import android.widget.TextView;

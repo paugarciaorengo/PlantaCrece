@@ -2,6 +2,7 @@ plugins {
     alias(libs.plugins.android.application)
     id("com.google.relay") version "0.3.12"
     id("org.jetbrains.kotlinx.kover") version "0.7.4"
+    alias(libs.plugins.google.gms.google.services)
 }
 
 android {
@@ -50,6 +51,10 @@ dependencies {
     implementation(libs.room.common)
     implementation(libs.room.runtime)
     implementation(libs.espresso.core)
+    implementation(libs.firebase.auth)
+    implementation(libs.credentials)
+    implementation(libs.credentials.play.services.auth)
+    implementation(libs.googleid)
     testImplementation(libs.ext.junit)
     testImplementation(libs.ext.junit)
     annotationProcessor(libs.room.compiler)
@@ -60,6 +65,8 @@ dependencies {
     implementation(libs.rules)
     implementation(libs.espresso.intents)
     implementation("com.google.guava:guava:33.0.0-jre")
+    implementation ("androidx.preference:preference:1.1.1")
+
 
     // Mockito
     testImplementation(libs.mockito.core)

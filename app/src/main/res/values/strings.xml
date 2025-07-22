@@ -14,6 +14,8 @@
     <string name="sad">Sad</string>
     <string name="very_sad">Very sad</string>
     <string name="no_emotion">No emotion</string>
+    <string name="settings">Ajustes</string>
+
 
     <!-- Calendario -->
     <string name="month_format">%1$s %2$d</string>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/light_green">
+
+    <SwitchPreferenceCompat
+        android:key="pref_enable_diary_reminder"
+        android:title="Recordatorio diario"
+        android:defaultValue="true"
+        android:summary="Activa o desactiva el recordatorio del diario"
+        android:icon="@drawable/ic_reminder"/>
+
+    <com.pim.planta.preferences.TimePreference
+        android:key="pref_reminder_time"
+        android:title="Hora del recordatorio"
+        android:defaultValue="20:00"
+        android:summary="%s"
+        android:icon="@drawable/ic_hour"/>
+
+    <Preference
+        android:key="pref_app_selection"
+        android:title="Seleccionar apps"
+        android:summary="Elige qué apps quieres monitorizar"
+        android:icon="@drawable/ic_apps"
+        style="@style/PreferenceTopMargin" />
+
+
+</PreferenceScreen>

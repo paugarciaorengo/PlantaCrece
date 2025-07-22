@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.test;
 
 import android.content.Context;
 

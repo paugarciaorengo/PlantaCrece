@@ -1,4 +1,4 @@
-package com.pim.planta.models;
+package com.pim.planta.ui.adapters;
 import android.content.Context;
 import android.graphics.Typeface;
 import android.os.AsyncTask;
@@ -14,6 +14,9 @@ import com.pim.planta.R;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantooRepository;
+import com.pim.planta.models.Plant;
+import com.pim.planta.models.User;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.List;

@@ -21,10 +21,12 @@ import androidx.work.testing.SynchronousExecutor;
 import androidx.work.testing.TestListenableWorkerBuilder;
 import androidx.work.testing.WorkManagerTestInitHelper;
 
+import com.pim.planta.base.NotificationActivity;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabasePlantoo;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
+import com.pim.planta.workers.NotificationWorker;
 
 import org.junit.After;
 import org.junit.Assert;

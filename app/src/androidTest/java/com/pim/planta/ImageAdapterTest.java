@@ -14,7 +14,7 @@ import android.widget.ImageView;
 import androidx.test.core.app.ApplicationProvider;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
-import com.pim.planta.models.ImageAdapter;
+import com.pim.planta.ui.adapters.ImageAdapter;
 
 import org.junit.Before;
 import org.junit.Test;

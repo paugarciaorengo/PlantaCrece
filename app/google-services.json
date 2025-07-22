@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "100219116884",
+    "project_id": "plantoo-f883c",
+    "storage_bucket": "plantoo-f883c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:100219116884:android:d22f46e62f5636a760fcc1",
+        "android_client_info": {
+          "package_name": "com.pim.planta"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCDr7RvWlYiXZHXKY7sWDBqUqh0UkXQ418"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

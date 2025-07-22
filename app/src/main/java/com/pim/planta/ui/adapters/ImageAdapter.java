@@ -1,4 +1,4 @@
-package com.pim.planta.models;
+package com.pim.planta.ui.adapters;
 
 import android.content.Context;
 import android.view.View;

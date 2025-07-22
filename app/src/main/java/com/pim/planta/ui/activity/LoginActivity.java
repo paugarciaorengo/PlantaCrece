@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.content.Intent;
 import android.content.SharedPreferences;
@@ -8,6 +8,8 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.User;

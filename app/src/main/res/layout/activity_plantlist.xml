@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:id="@+id/activity_plantlist"
     android:background="@drawable/background_gradient"
-    tools:context=".PlantListActivity">
+    tools:context=".ui.activity.PlantListActivity">
 
     <!-- Guideline for consistent layout scaling -->
     <androidx.constraintlayout.widget.Guideline

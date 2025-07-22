@@ -18,9 +18,11 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabasePlantoo;
 import com.pim.planta.db.PlantRepository;
+import com.pim.planta.helpers.CooldownManager;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
+import com.pim.planta.ui.activity.JardinActivity;
 
 import org.junit.After;
 import org.junit.Assert;

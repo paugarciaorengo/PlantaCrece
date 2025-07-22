@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.content.Intent;
 import android.os.Bundle;
@@ -11,6 +11,8 @@ import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;

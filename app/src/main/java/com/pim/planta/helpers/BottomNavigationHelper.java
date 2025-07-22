@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.helpers;
 
 import android.animation.ObjectAnimator;
 import android.animation.PropertyValuesHolder;
@@ -6,6 +6,12 @@ import android.app.Activity;
 import android.content.Intent;
 import android.view.View;
 import android.widget.ImageButton;
+
+import com.pim.planta.R;
+import com.pim.planta.ui.activity.DiaryActivity;
+import com.pim.planta.ui.activity.JardinActivity;
+import com.pim.planta.ui.activity.PerfilActivity;
+import com.pim.planta.ui.activity.PlantListActivity;
 
 public class BottomNavigationHelper {
 

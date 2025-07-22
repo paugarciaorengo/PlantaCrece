@@ -18,7 +18,7 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.pim.planta.db.DAO;
 import com.pim.planta.models.Plant;
-import com.pim.planta.models.PlantAdapter;
+import com.pim.planta.ui.adapters.PlantAdapter;
 import com.pim.planta.models.User;
 
 import org.junit.Before;

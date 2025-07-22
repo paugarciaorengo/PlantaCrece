@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.app.Dialog;
 import android.content.Intent;
@@ -10,10 +10,12 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
-import com.pim.planta.models.ImageAdapter;
+import com.pim.planta.ui.adapters.ImageAdapter;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.UserLogged;
 import com.pim.planta.models.UserPlantRelation;

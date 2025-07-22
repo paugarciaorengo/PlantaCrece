@@ -20,6 +20,7 @@ import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
+import com.pim.planta.ui.activity.InvernaderoActivity;
 
 import org.junit.After;
 import org.junit.Before;

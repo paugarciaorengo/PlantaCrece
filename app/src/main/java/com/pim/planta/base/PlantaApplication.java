@@ -1,10 +1,12 @@
-package com.pim.planta;
+package com.pim.planta.base;
 
 import android.app.Application;
 
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
+
+import com.pim.planta.workers.NotificationWorker;
 
 import java.util.concurrent.TimeUnit;
 

@@ -12,6 +12,9 @@ import androidx.test.ext.junit.runners.AndroidJUnit4;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
+import com.pim.planta.base.PlantaApplication;
+import com.pim.planta.workers.NotificationWorker;
+
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;

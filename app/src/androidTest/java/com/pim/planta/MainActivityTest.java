@@ -24,6 +24,7 @@ import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabasePlantoo;
 import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
+import com.pim.planta.ui.activity.MainActivity;
 
 import org.junit.After;
 import org.junit.Before;

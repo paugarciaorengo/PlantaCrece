@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.base;
 
 import android.app.NotificationManager;
 import android.content.Context;

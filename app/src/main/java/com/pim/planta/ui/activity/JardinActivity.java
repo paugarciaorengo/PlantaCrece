@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.Manifest;
 import android.animation.Animator;
@@ -40,6 +40,10 @@ import androidx.work.WorkManager;
 import androidx.work.WorkRequest;
 
 import com.airbnb.lottie.LottieAnimationView;
+import com.pim.planta.helpers.CooldownManager;
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.workers.NotificationWorker;
+import com.pim.planta.R;
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;

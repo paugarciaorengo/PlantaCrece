@@ -16,6 +16,7 @@ import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SnapHelper;
 
 import com.pim.planta.R;
+import com.pim.planta.ui.adapters.YearAdapter;
 
 import java.time.LocalDate;
 

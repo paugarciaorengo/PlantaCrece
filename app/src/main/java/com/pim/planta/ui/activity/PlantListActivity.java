@@ -1,11 +1,10 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,10 +16,13 @@ import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import com.pim.planta.helpers.BottomNavigationHelper;
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.models.Plant;
-import com.pim.planta.models.PlantAdapter;
+import com.pim.planta.ui.adapters.PlantAdapter;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
 

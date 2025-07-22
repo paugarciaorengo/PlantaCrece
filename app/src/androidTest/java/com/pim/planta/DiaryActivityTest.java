@@ -21,6 +21,7 @@ import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.DiaryEntry;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
+import com.pim.planta.ui.activity.DiaryActivity;
 
 import org.junit.After;
 import org.junit.Before;

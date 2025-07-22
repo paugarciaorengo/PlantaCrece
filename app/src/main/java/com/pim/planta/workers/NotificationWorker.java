@@ -1,27 +1,23 @@
-package com.pim.planta;
+package com.pim.planta.workers;
 
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
 import android.content.Context;
 import android.content.SharedPreferences;
-import android.os.Build;
 import android.os.Handler;
 import android.os.Looper;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
-import androidx.core.app.NotificationCompat;
 import androidx.work.Worker;
 import androidx.work.WorkerParameters;
 
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantRepository;
+import com.pim.planta.helpers.NotificationUtils;
 import com.pim.planta.models.Plant;
 
 public class NotificationWorker extends Worker {
 
-    private static final String CHANNEL_ID = "notification_channel";
     private static final int NOTIFICATION_ID = 1;
     private static final String PREFS_NAME = "app_prefs";
     private static final String LAST_EXIT_TIME_KEY = "last_exit_time";
@@ -64,7 +60,14 @@ public class NotificationWorker extends Worker {
                         if (plant != null) {
                             // Post to the main thread to send the notification
                             new Handler(Looper.getMainLooper()).post(() -> {
-                                sendUsageNotification(xpToDeduct, plant.getNickname());
+                                String message = "Your " + plant.getNickname() + " has lost " + xpToDeduct + " experience due to bad usage of your phone!";
+                                NotificationUtils.sendNotification(
+                                        context,
+                                        "Alerta",
+                                        message,
+                                        NotificationUtils.CHANNEL_GENERAL,
+                                        NotificationUtils.NOTIF_ID_USAGE_ALERT
+                                );
                             });
                         }
                     });
@@ -84,29 +87,4 @@ public class NotificationWorker extends Worker {
         return timeSinceLastResume;
     }
 
-    public void sendUsageNotification(long xpToDeduct, String plantNickname) {
-        createNotificationChannel();
-        NotificationCompat.Builder builder = new NotificationCompat.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.alerta_icon)
-                .setContentTitle("Alerta")
-                .setContentText("Your " + plantNickname + " has lost " + xpToDeduct + " experience due to bad usage of your phone!")
-                .setPriority(NotificationCompat.PRIORITY_DEFAULT);
-
-        NotificationManager manager = (NotificationManager) context
-                .getSystemService(Context.NOTIFICATION_SERVICE);
-        manager.notify(NOTIFICATION_ID, builder.build());
-    }
-
-    public void createNotificationChannel() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            NotificationChannel channel = new NotificationChannel(
-                    CHANNEL_ID,
-                    "Notificaciones de la App",
-                    NotificationManager.IMPORTANCE_DEFAULT
-            );
-            NotificationManager manager = (NotificationManager) context
-                    .getSystemService(Context.NOTIFICATION_SERVICE);
-            manager.createNotificationChannel(channel);
-        }
-    }
 }

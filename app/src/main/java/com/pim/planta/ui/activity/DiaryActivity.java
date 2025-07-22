@@ -1,4 +1,4 @@
-package com.pim.planta;
+package com.pim.planta.ui.activity;
 
 import android.os.Bundle;
 import android.view.MotionEvent;
@@ -10,6 +10,9 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.pim.planta.helpers.BottomNavigationHelper;
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.R;
 import com.pim.planta.db.DatabaseExecutor;
 import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.models.CalendarDraw;
