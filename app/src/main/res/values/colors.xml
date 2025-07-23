@@ -5,11 +5,14 @@
     <color name="light_green">#E7F1ED</color>
     <color name="green">#35D18F</color>
     <color name="dark_green">#073E24</color>
+    <color name="top_backround">#F9F4D7</color>
+    <color name="down_background">#C9FBFB</color>
 
-    <color name="excited_green">#3DDC84</color>
-    <color name="happy_yellow">#FFD600</color>
-    <color name="neutral_gray">#9E9E9E</color>
-    <color name="sad_blue">#2196F3</color>
-    <color name="very_sad_purple">#673AB7</color>
+    <color name="excited_green">#FDF5BC</color>
+    <color name="happy_yellow">#FBEB7D</color>
+    <color name="neutral_gray">#F0C1A5</color>
+    <color name="sad_blue">#F2CF83</color>
+    <color name="very_sad_purple">#EBB237</color>
+
 
 </resources>

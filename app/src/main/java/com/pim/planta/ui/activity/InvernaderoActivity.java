@@ -3,6 +3,7 @@ package com.pim.planta.ui.activity;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.res.Resources;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.widget.GridView;
@@ -126,13 +127,26 @@ public class InvernaderoActivity extends NotificationActivity {
         for (Map.Entry<String, ?> entry : allEntries.entrySet()) {
             String imageViewId = entry.getKey();
             if (imageViewId.startsWith("imageView")) {
-                int selectedImageId = (int) entry.getValue();
-                ImageView imageView = findViewById(getResources().getIdentifier(imageViewId, "id", getPackageName()));
-                imageView.setImageResource(selectedImageId);
+                Object value = entry.getValue();
+                if (value instanceof Integer) {
+                    int selectedImageId = (int) value;
 
-                String plantName = getPlantNameFromImageId(selectedImageId);
-                if (plantName != null) {
-                    displayedPlantCounts.put(plantName, displayedPlantCounts.getOrDefault(plantName, 0) + 1);
+                    try {
+                        // Verifica que el recurso es un drawable válido
+                        getResources().getDrawable(selectedImageId, null);
+
+                        ImageView imageView = findViewById(getResources().getIdentifier(imageViewId, "id", getPackageName()));
+                        imageView.setImageResource(selectedImageId);
+
+                        String plantName = getPlantNameFromImageId(selectedImageId);
+                        if (plantName != null) {
+                            displayedPlantCounts.put(plantName, displayedPlantCounts.getOrDefault(plantName, 0) + 1);
+                        }
+
+                    } catch (Resources.NotFoundException | ClassCastException e) {
+                        // Si el recurso no es válido o no es un drawable, lo ignoramos
+                        e.printStackTrace();
+                    }
                 }
             }
         }
@@ -244,9 +258,19 @@ public class InvernaderoActivity extends NotificationActivity {
         for (String imageViewId : imageViewIds) {
             int selectedImageId = sharedPreferences.getInt(imageViewId, -1);
             if (selectedImageId != -1) {
-                ImageView imageView = findViewById(getResources().getIdentifier(imageViewId, "id", getPackageName()));
-                imageView.setImageResource(selectedImageId);
+                try {
+                    getResources().getDrawable(selectedImageId, null); // Verifica que sea un drawable
+                    ImageView imageView = findViewById(getResources().getIdentifier(imageViewId, "id", getPackageName()));
+                    imageView.setImageResource(selectedImageId);
+                } catch (Resources.NotFoundException e) {
+                    e.printStackTrace();
+                    // Puedes hacer un fallback o limpiar la entry corrupta
+                    SharedPreferences.Editor editor = sharedPreferences.edit();
+                    editor.remove(imageViewId);
+                    editor.apply();
+                }
             }
+
         }
         String selectedPlant = sharedPreferences.getString("selectedPlant", null);
         if (selectedPlant != null) {

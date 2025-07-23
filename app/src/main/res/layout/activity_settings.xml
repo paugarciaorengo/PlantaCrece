@@ -1,25 +1,59 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.coordinatorlayout.widget.CoordinatorLayout
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    app:statusBarBackground="#C9FBFB">
 
+    <!-- AppBar superior (vacío o con título si quieres) -->
     <com.google.android.material.appbar.AppBarLayout
+        android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
+        <!-- Título opcional -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:title="Ajustes"/>
+            android:background="@color/down_background"
+            app:title="Ajustes"
+            app:titleTextColor="#284825" />
     </com.google.android.material.appbar.AppBarLayout>
 
+    <!-- Contenedor central con márgenes para evitar solaparse -->
     <FrameLayout
-        android:id="@+id/settings_container"
+        android:id="@+id/settings_container2"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior"/>
+        android:layout_height="548dp"
+        android:layout_margin="16dp"
+        android:layout_marginTop="?attr/actionBarSize"
+        android:layout_marginBottom="72dp"
+        app:layout_behavior="@string/appbar_scrolling_view_behavior"
+        app:layout_constraintBottom_toTopOf="@id/toolbar2"
+        app:layout_constraintTop_toBottomOf="@id/appBarLayout" />
+
+    <!-- Toolbar inferior con botón de retroceso -->
+    <androidx.appcompat.widget.Toolbar
+        android:id="@+id/toolbar2"
+        android:layout_width="match_parent"
+        android:layout_height="56dp"
+        android:layout_gravity="bottom"
+        android:background="@color/top_backround"
+        android:foregroundTint="#FBF3D5"
+        app:subtitleTextColor="#FCF3D5"
+        app:titleTextColor="#2B2D30">
+
+        <ImageButton
+            android:id="@+id/back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="match_parent"
+            android:layout_gravity="start|center_vertical"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Volver atrás"
+            android:padding="12dp"
+            android:src="@drawable/ic_arrow_back" />
+    </androidx.appcompat.widget.Toolbar>
+
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
