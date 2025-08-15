@@ -160,44 +160,56 @@
 
                     <ImageView
                         android:id="@+id/excitedImage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="64dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
                         android:src="@drawable/excited" />
 
                     <ImageView
                         android:id="@+id/happyImage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="64dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
-                        android:src="@drawable/happy" />
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/happy"
+                        android:contentDescription="Calma" />
 
                     <ImageView
                         android:id="@+id/neutralImage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:layout_width="0dp"
+                        android:layout_height="64dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
-                        android:src="@drawable/neutral" />
-
-                    <ImageView
-                        android:id="@+id/sadImage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_margin="8dp"
-                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
                         android:src="@drawable/sad" />
 
                     <ImageView
-                        android:id="@+id/verySadImage"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
+                        android:id="@+id/sadImage"
+                        android:layout_width="0dp"
+                        android:layout_height="64dp"
                         android:layout_margin="8dp"
                         android:layout_weight="1"
-                        android:src="@drawable/very_sad" />
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/ungry" />
+
+                    <ImageView
+                        android:id="@+id/verySadImage"
+                        android:layout_width="0dp"
+                        android:layout_height="64dp"
+                        android:layout_margin="8dp"
+                        android:layout_weight="1"
+                        android:adjustViewBounds="true"
+                        android:scaleType="centerCrop"
+                        android:src="@drawable/scared" />
                 </LinearLayout>
+
 
                 <TextView
                     android:id="@+id/textHighlight"

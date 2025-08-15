@@ -2,7 +2,6 @@ package com.pim.planta.ui.activity;
 
 import android.app.Dialog;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.View;
@@ -16,15 +15,18 @@ import androidx.core.content.res.ResourcesCompat;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
-import com.pim.planta.helpers.BottomNavigationHelper;
-import com.pim.planta.base.NotificationActivity;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.FirebaseFirestore;
 import com.pim.planta.R;
-import com.pim.planta.db.DatabaseExecutor;
+import com.pim.planta.base.NotificationActivity;
 import com.pim.planta.db.PlantooRepository;
+import com.pim.planta.helpers.BottomNavigationHelper;
 import com.pim.planta.models.Plant;
-import com.pim.planta.ui.adapters.PlantAdapter;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
+import com.pim.planta.models.UserPlantRelation;
+import com.pim.planta.ui.adapters.PlantAdapter;
 
 import java.util.List;
 
@@ -32,16 +34,13 @@ public class PlantListActivity extends NotificationActivity {
     private RecyclerView plantListRecyclerView;
     private PlantAdapter plantAdapter;
     private List<Plant> plantList;
-    private PlantooRepository plantooRepository; // ✅ nuevo repositorio
-    private ImageView imageView6;
-    private TextView plantaElegidaTextView;
+    private PlantooRepository plantooRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_plantlist);
 
-        // Verificar usuario logueado
         User currentUser = UserLogged.getInstance().getCurrentUser();
         if (currentUser == null) {
             Toast.makeText(this, "No user is currently logged in", Toast.LENGTH_LONG).show();
@@ -50,39 +49,48 @@ public class PlantListActivity extends NotificationActivity {
             return;
         }
 
-        // Obtener referencias UI
-        plantaElegidaTextView = findViewById(R.id.textView3);
-        imageView6 = findViewById(R.id.imageView6);
-        imageView6.setVisibility(View.INVISIBLE);
+        boolean forSelectionOnly = getIntent().getBooleanExtra("FOR_SELECTION_ONLY", false);
+
+        TextView plantaElegidaTextView = findViewById(R.id.textView3);
+        ImageView imageView6 = findViewById(R.id.imageView6);
+
+        if (forSelectionOnly) {
+            plantaElegidaTextView.setText("¡Elige tu planta!");
+            imageView6.setVisibility(View.GONE);
+        }
+
         plantListRecyclerView = findViewById(R.id.plant_list_recyclerview);
         plantListRecyclerView.setLayoutManager(new LinearLayoutManager(this));
 
-        // Obtener fuente y repositorio
         Typeface aventaFont = ResourcesCompat.getFont(this, R.font.aventa);
         plantooRepository = PlantooRepository.getInstance(this);
 
-        // Obtener lista de plantas en segundo plano
-        DatabaseExecutor.execute(() -> {
-            plantList = plantooRepository.getAllPlants();
+        plantooRepository.getAllPlants().thenAccept(plants -> {
+            plantooRepository.getRelationsForUser(currentUser.getUid()).thenAccept(relations -> {
+                runOnUiThread(() -> {
+                    plantList = plants;
+                    plantAdapter = new PlantAdapter(this, plantList, aventaFont, plantooRepository, currentUser, relations);
+                    plantListRecyclerView.setAdapter(plantAdapter);
 
-            runOnUiThread(() -> {
-                plantAdapter = new PlantAdapter(this, plantList, aventaFont, plantooRepository, currentUser);
-                plantListRecyclerView.setAdapter(plantAdapter);
-
-                plantAdapter.setOnItemClickListener(plant -> {
-                    if (plant.getNickname() == null || plant.getNickname().isEmpty()) {
+                    plantAdapter.setOnItemClickListener(plant -> {
                         showNicknameDialog(plant);
-                    } else {
-                        saveSelectedPlantAndGoToJardin(plant);
-                    }
+                    });
                 });
             });
+        }).exceptionally(e -> {
+            e.printStackTrace();
+            runOnUiThread(() ->
+                    Toast.makeText(this, "Error cargando plantas", Toast.LENGTH_SHORT).show());
+            return null;
         });
 
-        // Navegación inferior
         View bottomNavView = findViewById(R.id.bottomNavigation);
-        BottomNavigationHelper.Binding bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
-        BottomNavigationHelper.setup(this, bottomNavBinding, PlantListActivity.class);
+        if (forSelectionOnly) {
+            bottomNavView.setVisibility(View.GONE);
+        } else {
+            BottomNavigationHelper.Binding bottomNavBinding = new BottomNavigationHelper.Binding(bottomNavView);
+            BottomNavigationHelper.setup(this, bottomNavBinding, PlantListActivity.class);
+        }
     }
 
     private void showNicknameDialog(Plant plant) {
@@ -98,31 +106,45 @@ public class PlantListActivity extends NotificationActivity {
         saveButton.setOnClickListener(v -> {
             String nickname = nicknameEditText.getText().toString().trim();
             if (!nickname.isEmpty()) {
-                plant.setNickname(nickname);
-                DatabaseExecutor.execute(() -> {
-                    plantooRepository.updatePlant(plant); // ✅ uso del nuevo repositorio
-                });
-                saveSelectedPlantAndGoToJardin(plant);
+                saveSelectedPlantAndGoToJardin(plant, nickname);
                 dialog.dismiss();
             } else {
-                Toast.makeText(this, "Please enter a nickname", Toast.LENGTH_SHORT).show();
+                Toast.makeText(this, "Por favor ingresa un apodo", Toast.LENGTH_SHORT).show();
             }
         });
 
         dialog.show();
     }
 
-    private void saveSelectedPlantAndGoToJardin(Plant plant) {
-        plantaElegidaTextView.setText("Planta Elegida: " + plant.getName());
-        plantaElegidaTextView.setAlpha(0f);
-        plantaElegidaTextView.animate().alpha(1f).setDuration(300).start();
+    private void saveSelectedPlantAndGoToJardin(Plant plant, String nickname) {
+        FirebaseUser firebaseUser = FirebaseAuth.getInstance().getCurrentUser();
+        if (firebaseUser == null) {
+            Toast.makeText(this, "Usuario no autenticado", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        SharedPreferences sharedPreferences = getSharedPreferences("plant_prefs", MODE_PRIVATE);
-        SharedPreferences.Editor editor = sharedPreferences.edit();
-        editor.putString("selectedPlant", plant.getName());
-        editor.apply();
+        String uid = firebaseUser.getUid();
+        if (uid == null || uid.isEmpty()) {
+            Toast.makeText(this, "UID de usuario no disponible", Toast.LENGTH_SHORT).show();
+            return;
+        }
 
-        Intent intent = new Intent(PlantListActivity.this, JardinActivity.class);
-        startActivity(intent);
+        // ✅ Crear relación usuario-planta correctamente
+        UserPlantRelation relation = new UserPlantRelation(uid, plant.getId(), nickname, null);
+        plantooRepository.insertUserPlantRelation(relation);
+
+        // ✅ Guardar ID de la planta seleccionada, no el nombre
+        FirebaseFirestore.getInstance()
+                .collection("users")
+                .document(uid)
+                .update("selectedPlant", plant.getId())
+                .addOnSuccessListener(unused -> {
+                    UserLogged.getInstance().getCurrentUser().setSelectedPlant(plant.getId());
+                    startActivity(new Intent(this, JardinActivity.class));
+                    finish();
+                })
+                .addOnFailureListener(e -> {
+                    Toast.makeText(this, "Error al guardar planta", Toast.LENGTH_SHORT).show();
+                });
     }
 }

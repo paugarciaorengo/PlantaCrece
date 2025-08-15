@@ -8,11 +8,11 @@
     <color name="top_backround">#F9F4D7</color>
     <color name="down_background">#C9FBFB</color>
 
-    <color name="excited_green">#FDF5BC</color>
-    <color name="happy_yellow">#FBEB7D</color>
-    <color name="neutral_gray">#F0C1A5</color>
-    <color name="sad_blue">#F2CF83</color>
-    <color name="very_sad_purple">#EBB237</color>
+    <color name="excited_green">#FBD127</color>
+    <color name="happy_green">#99C77A</color>
+    <color name="scared_gray">#959AA0</color>
+    <color name="sad_blue">#61ADEA</color>
+    <color name="ungry_red">#ED3F32</color>
 
 
 </resources>

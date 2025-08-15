@@ -65,7 +65,22 @@
                 android:value=".ui.activity.MainActivity"/>
         </activity>
 
-        <activity android:name=".ui.activity.AppSelectionActivity" />
+        <activity android:name=".ui.settings.AppSelectionActivity" />
+
+        <activity android:name=".ui.activity.JardinCompartidoActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data
+                    android:scheme="https"
+                    android:host="plantoo.page.link" />
+            </intent-filter>
+        </activity>
+
 
 
         <provider
@@ -78,7 +93,9 @@
                 android:value="androidx.startup"
                 tools:node="remove" />
         </provider>
+
     </application>
+
     <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS" tools:ignore="ManifestOrder,ProtectedPermissions"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 

@@ -10,6 +10,7 @@ import android.widget.ImageButton;
 import com.pim.planta.R;
 import com.pim.planta.ui.activity.DiaryActivity;
 import com.pim.planta.ui.activity.JardinActivity;
+import com.pim.planta.ui.activity.JardinCompartidoActivity;
 import com.pim.planta.ui.activity.PerfilActivity;
 import com.pim.planta.ui.activity.PlantListActivity;
 
@@ -20,12 +21,14 @@ public class BottomNavigationHelper {
         public final ImageButton btnMaceta;
         public final ImageButton btnPlantadex;
         public final ImageButton btnUsuario;
+        public final ImageButton btnComunidad;
 
         public Binding(View rootView) {
             btnLupa = rootView.findViewById(R.id.imageButtonLupa);
             btnMaceta = rootView.findViewById(R.id.imageButtonMaceta);
             btnPlantadex = rootView.findViewById(R.id.imageButtonPlantadex);
             btnUsuario = rootView.findViewById(R.id.imageButtonUsuario);
+            btnComunidad = rootView.findViewById(R.id.imageButtonComunity);
         }
     }
 
@@ -39,6 +42,8 @@ public class BottomNavigationHelper {
             disableButton(binding.btnPlantadex);
         } else if (currentActivity.equals(PerfilActivity.class)) {
             disableButton(binding.btnUsuario);
+        }else if (currentActivity.equals(JardinCompartidoActivity.class)) {
+            disableButton(binding.btnComunidad);
         }
 
         // Configurar listeners
@@ -46,6 +51,7 @@ public class BottomNavigationHelper {
         binding.btnMaceta.setOnClickListener(v -> navigate(activity, JardinActivity.class, v));
         binding.btnLupa.setOnClickListener(v -> navigate(activity, DiaryActivity.class, v));
         binding.btnUsuario.setOnClickListener(v -> navigate(activity, PerfilActivity.class, v));
+        binding.btnComunidad.setOnClickListener(v -> navigate(activity, JardinCompartidoActivity.class, v));
     }
 
     private static void disableButton(ImageButton button) {

@@ -14,18 +14,18 @@ import androidx.work.NetworkType;
 import androidx.work.PeriodicWorkRequest;
 import androidx.work.WorkManager;
 
-import com.pim.planta.base.NotificationActivity;
 import com.pim.planta.R;
-import com.pim.planta.db.DatabaseExecutor;
-import com.pim.planta.db.PlantRepository;
+import com.pim.planta.base.NotificationActivity;
+import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.workers.NotificationWorker;
 
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 public class MainActivity extends NotificationActivity {
 
-    private PlantRepository plantaRepo;
+    private PlantooRepository plantooRepository;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,23 +40,16 @@ public class MainActivity extends NotificationActivity {
         });
 
         Button buttonLogin = findViewById(R.id.buttonEmpezar);
+        plantooRepository = PlantooRepository.getInstance(this);
 
-        plantaRepo = PlantRepository.getInstance(this);
-
-        // Poblar la base de datos en caso de que no lo este
-        DatabaseExecutor.execute(() -> {
-            if (plantaRepo.getPlantaDAO().getAllPlantas().isEmpty()){
-                Plant nuevaPlanta1 = new Plant("Rosa","image_rosa", R.drawable.image_rosa, 0, 10000, "Perfecta para regalo entre enamorados", "Rosa");
-                Plant nuevaPlanta2 = new Plant("Margarita","image_margarita", R.drawable.image_margarita,0, 10000, "Simple y bonita, como tu <3","Bellis perennis");
-                Plant nuevaPlanta3 = new Plant("Girasol","image_girasol", R.drawable.image_girasol, 0, 10000, "Persiguiendo la estrella más grande","Helianthus annuus");
-                Plant nuevaPlanta4 = new Plant("Tulipan","image_tulipan", R.drawable.image_tulipan5, 0, 10000, "De diversos y vivos colores","Tulipa");
-                //Plant nuevaPlanta5 = new Plant("Diente de León","image_diente_de_leon", R.drawable.image_diente_de_leon, 0, 10000, "Una metomorfosis unica", "Taraxacum officinale");
-                plantaRepo.getPlantaDAO().insert(nuevaPlanta1);
-                plantaRepo.getPlantaDAO().insert(nuevaPlanta2);
-                plantaRepo.getPlantaDAO().insert(nuevaPlanta3);
-                plantaRepo.getPlantaDAO().insert(nuevaPlanta4);
-                //plantaRepo.getPlantaDAO().insert(nuevaPlanta5);
+        // Poblar Firestore si está vacío
+        plantooRepository.getAllPlants().thenAccept(plants -> {
+            if (plants == null || plants.isEmpty()) {
+                insertDefaultPlants();
             }
+        }).exceptionally((Throwable e) -> {
+            e.printStackTrace();
+            return null;
         });
 
         buttonLogin.setOnClickListener(v -> {
@@ -67,25 +60,39 @@ public class MainActivity extends NotificationActivity {
         scheduleNotificationWorker();
     }
 
+    private void insertDefaultPlants() {
+        Plant p1 = new Plant("Rosa", "image_rosa", R.drawable.image_rosa, 10000, "Perfecta para regalo entre enamorados", "Rosa");
+        Plant p2 = new Plant("Margarita", "image_margarita", R.drawable.image_margarita, 10000, "Simple y bonita, como tú <3", "Bellis perennis");
+        Plant p3 = new Plant("Girasol", "image_girasol", R.drawable.image_girasol, 10000, "Persiguiendo la estrella más grande", "Helianthus annuus");
+        Plant p4 = new Plant("Tulipán", "image_tulipan", R.drawable.image_tulipan5, 10000, "De diversos y vivos colores", "Tulipa");
+
+
+        List<Plant> defaultPlants = List.of(p1, p2, p3, p4);
+
+        for (Plant plant : defaultPlants) {
+            plantooRepository.insertPlant(plant).exceptionally((Throwable e) -> {
+                e.printStackTrace();
+                return null;
+            });
+        }
+    }
+
     private void scheduleNotificationWorker() {
-        // Define constraints
         Constraints constraints = new Constraints.Builder()
                 .setRequiredNetworkType(NetworkType.NOT_REQUIRED)
                 .build();
 
-        // Create a PeriodicWorkRequest
         PeriodicWorkRequest notificationWorkRequest = new PeriodicWorkRequest.Builder(
                 NotificationWorker.class,
-                15, // Repeat interval
+                15,
                 TimeUnit.MINUTES
         )
-                .setConstraints(constraints) // Add constraints
+                .setConstraints(constraints)
                 .build();
 
-        // Enqueue the work request
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
-                "NotificationWork", // Unique work name
-                ExistingPeriodicWorkPolicy.KEEP, // Keep existing work if it exists
+                "NotificationWork",
+                ExistingPeriodicWorkPolicy.KEEP,
                 notificationWorkRequest
         );
     }

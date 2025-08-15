@@ -5,24 +5,36 @@
     android:layout_height="match_parent"
     app:statusBarBackground="#C9FBFB">
 
-    <!-- AppBar superior (vacío o con título si quieres) -->
+    <!-- AppBar superior con Toolbar -->
     <com.google.android.material.appbar.AppBarLayout
         android:id="@+id/appBarLayout"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:theme="@style/ThemeOverlay.AppCompat.Dark.ActionBar">
 
-        <!-- Título opcional -->
         <androidx.appcompat.widget.Toolbar
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/down_background"
             app:title="Ajustes"
-            app:titleTextColor="#284825" />
+            app:titleTextColor="#284825">
+
+            <!-- Botón de cerrar sesión en el toolbar -->
+            <Button
+                android:id="@+id/logout_button"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Cerrar sesión"
+                android:textColor="#FFFFFF"
+                android:backgroundTint="@color/dark_green"
+                android:layout_gravity="end|center_vertical"
+                android:layout_marginEnd="8dp"
+                android:elevation="2dp" />
+        </androidx.appcompat.widget.Toolbar>
     </com.google.android.material.appbar.AppBarLayout>
 
-    <!-- Contenedor central con márgenes para evitar solaparse -->
+    <!-- Contenedor del fragmento de ajustes -->
     <FrameLayout
         android:id="@+id/settings_container2"
         android:layout_width="match_parent"

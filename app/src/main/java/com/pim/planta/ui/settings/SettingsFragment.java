@@ -8,7 +8,7 @@ import androidx.preference.PreferenceFragmentCompat;
 
 import com.pim.planta.R;
 import com.pim.planta.preferences.TimePreferenceDialogFragmentCompat;
-import com.pim.planta.ui.activity.AppSelectionActivity;
+import com.pim.planta.ui.settings.AppSelectionActivity;
 
 public class SettingsFragment extends PreferenceFragmentCompat {
 

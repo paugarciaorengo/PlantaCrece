@@ -3,9 +3,9 @@ package com.pim.planta.db;
 import android.content.Context;
 
 import com.pim.planta.models.DiaryEntry;
-import com.pim.planta.models.EmotionEntry;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.UserPlantRelation;
+import com.pim.planta.repository.FirestoreRepository;
 
 import java.text.SimpleDateFormat;
 import java.time.Instant;
@@ -15,13 +15,16 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.concurrent.CompletableFuture;
 
 public class PlantooRepository {
     private static PlantooRepository instance;
     private final DAO dao;
+    private final FirestoreRepository firestoreRepository;
 
     private PlantooRepository(Context context) {
-        dao = PlantRepository.getInstance(context).getPlantaDAO();
+        dao = DatabasePlantoo.getInstance(context).DAO();
+        firestoreRepository = FirestoreRepository.getInstance();
     }
 
     public static synchronized PlantooRepository getInstance(Context context) {
@@ -31,56 +34,43 @@ public class PlantooRepository {
         return instance;
     }
 
-    public List<Plant> getAllPlants() {
-        return dao.getAllPlantas();
+    // --- FIRESTORE METHODS (REMOTE) ---
+
+    public CompletableFuture<List<Plant>> getAllPlants() {
+        return firestoreRepository.getAllPlants();
     }
 
-    public void updatePlant(Plant plant) {
-        dao.update(plant);
+    public CompletableFuture<Plant> getPlantById(String id) {
+        return firestoreRepository.getPlantById(id);
     }
 
-    public int getGrowCount(int userId, int plantId) {
-        return dao.getGrowCount(userId, plantId);
+    public CompletableFuture<Plant> getPlantByName(String name) {
+        return firestoreRepository.getPlantByName(name);
     }
 
-    public List<UserPlantRelation> getRelationsForUser(int userId) {
-        return dao.getUserPlantRelations(userId);
+    public CompletableFuture<Void> insertPlant(Plant plant) {
+        return firestoreRepository.insertPlant(plant);
     }
 
-    public void insertUserPlantRelation(int userId, int plantId) {
-        dao.insertUserPlantRelation(userId, plantId);
-    }
-
-    public Plant getPlantByName(String name) {
-        return dao.getPlantaByName(name);
-    }
-
-    public void incrementPlantXp(String plantName, int amount) {
-        dao.incrementXpByPlantName(plantName, amount);
-    }
-
-    public void incrementGrowCount(int userId, int plantId) {
-        dao.incrementGrowCount(userId, plantId);
+    public CompletableFuture<Void> updatePlant(Plant plant) {
+        return firestoreRepository.updatePlant(plant);
     }
 
     public void insertUserPlantRelation(UserPlantRelation relation) {
-        dao.insert(relation);
+        firestoreRepository.insertUserPlantRelation(relation);
     }
 
-    public int getEmotionByUserAndDate(int userId, long date) {
-        return dao.getEmotionByUserAndDate(userId, date);
+    public CompletableFuture<List<UserPlantRelation>> getRelationsForUser(String userUid) {
+        return firestoreRepository.getUserPlantRelations(userUid);
     }
 
-    public String getNoteByUserAndDate(int userId, long date) {
-        return dao.getNoteByUserAndDate(userId, date);
-    }
+    // --- ROOM METHODS (LOCAL, ONLY DIARY) ---
 
-    public void insertDiaryEntry(int userId, int emotion, String highlight, String note, String date) {
+    public void insertDiaryEntry(String userUid, int emotion, String highlight, String note, String date) {
         long dateMillis = parseDateToMillis(date);
-
-        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userId, dateMillis);
+        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userUid, dateMillis);
         if (entry == null) {
-            entry = new DiaryEntry(highlight, note, emotion, userId, dateMillis);
+            entry = new DiaryEntry(highlight, note, emotion, userUid, dateMillis);
             dao.insertDiaryEntry(entry);
         } else {
             entry.setHighlight(highlight);
@@ -90,36 +80,34 @@ public class PlantooRepository {
         }
     }
 
-    public int getEmotionCodeByUserAndDate(int userId, String date) {
+    public int getEmotionByUserAndDate(String userUid, long date) {
+        return dao.getEmotionByUserAndDate(userUid, date);
+    }
+
+    public String getNoteByUserAndDate(String userUid, long date) {
+        return dao.getNoteByUserAndDate(userUid, date);
+    }
+
+    public int getEmotionCodeByUserAndDate(String userUid, String date) {
         long dateMillis = parseDateToMillis(date);
-        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userId, dateMillis);
+        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userUid, dateMillis);
         return entry != null ? entry.getEmotion() : 0;
     }
 
-    public String getNoteByUserAndDate(int userId, String date) {
+    public String getNoteByUserAndDate(String userUid, String date) {
         long dateMillis = parseDateToMillis(date);
-        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userId, dateMillis);
+        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userUid, dateMillis);
         return entry != null ? entry.getAnnotation() : null;
     }
 
-    public String getHighlightByUserAndDate(int userId, String date) {
+    public String getHighlightByUserAndDate(String userUid, String date) {
         long dateMillis = parseDateToMillis(date);
-        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userId, dateMillis);
+        DiaryEntry entry = dao.getDiaryEntryByUserAndDate(userUid, dateMillis);
         return entry != null ? entry.getHighlight() : null;
     }
 
-    private long parseDateToMillis(String dateString) {
-        try {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
-            Date date = sdf.parse(dateString);
-            return date != null ? date.getTime() : 0;
-        } catch (Exception e) {
-            return 0;
-        }
-    }
-
-    public List<DiaryEntry> getDiaryEntriesForMonth(int userId, int year, int month) {
-        List<DiaryEntry> all = dao.getEntradasByUserId(userId);
+    public List<DiaryEntry> getDiaryEntriesForMonth(String userUid, int year, int month) {
+        List<DiaryEntry> all = dao.getEntradasByUserUid(userUid);
         List<DiaryEntry> result = new ArrayList<>();
         for (DiaryEntry entry : all) {
             LocalDate entryDate = Instant.ofEpochMilli(entry.getDate())
@@ -132,7 +120,49 @@ public class PlantooRepository {
         return result;
     }
 
-    public List<DiaryEntry> getEntriesByUserAndMonth(int userId, int year, int month) {
-        return getDiaryEntriesForMonth(userId, year, month);
+    public List<DiaryEntry> getEntriesByUserAndMonth(String userUid, int year, int month) {
+        return getDiaryEntriesForMonth(userUid, year, month);
+    }
+
+    private long parseDateToMillis(String dateString) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date date = sdf.parse(dateString);
+            return date != null ? date.getTime() : 0;
+        } catch (Exception e) {
+            return 0;
+        }
+    }
+
+    public CompletableFuture<UserPlantRelation> getUserPlantRelation(String userId, String plantId) {
+        return firestoreRepository.getUserPlantRelation(userId, plantId);
+    }
+
+    public CompletableFuture<Void> updateUserPlantRelation(UserPlantRelation relation) {
+        return firestoreRepository.updateUserPlantRelation(relation);
+    }
+
+    public void incrementGrowCount(String userId, String plantId) {
+        getUserPlantRelation(userId, plantId).thenAccept(relation -> {
+            if (relation != null) {
+                relation.setGrowCount(relation.getGrowCount() + 1);
+                updateUserPlantRelation(relation);
+            }
+        });
+    }
+
+    public CompletableFuture<Void> insertOrUpdateUserPlantRelation(UserPlantRelation relation) {
+        return firestoreRepository.updateUserPlantRelation(relation); // Usa merge()
+    }
+
+    public CompletableFuture<Void> resetProgressForPlant(String userId, String plantId) {
+        return getUserPlantRelation(userId, plantId).thenCompose(relation -> {
+            if (relation != null) {
+                relation.setXp(0);
+                relation.setNickname(null);
+                return updateUserPlantRelation(relation);
+            }
+            return CompletableFuture.completedFuture(null);
+        });
     }
 }

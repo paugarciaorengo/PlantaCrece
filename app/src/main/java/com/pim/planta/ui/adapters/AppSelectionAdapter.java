@@ -13,7 +13,9 @@ import android.widget.TextView;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
+
 import com.pim.planta.R;
+import com.pim.planta.helpers.MonitorHelper;
 
 import java.util.HashSet;
 import java.util.List;
@@ -25,9 +27,12 @@ public class AppSelectionAdapter extends RecyclerView.Adapter<AppSelectionAdapte
     private final PackageManager packageManager;
     private final Set<String> selectedPackages = new HashSet<>();
 
-    public AppSelectionAdapter(Context context, List<ApplicationInfo> apps) {
+    public AppSelectionAdapter(Context context, List<ApplicationInfo> apps, Set<String> selected) {
         this.appList = apps;
         this.packageManager = context.getPackageManager();
+        if (selected != null) {
+            this.selectedPackages.addAll(selected);
+        }
     }
 
     public Set<String> getSelectedPackages() {
@@ -53,6 +58,10 @@ public class AppSelectionAdapter extends RecyclerView.Adapter<AppSelectionAdapte
         holder.imageViewAppIcon.setImageDrawable(appIcon);
         holder.checkBox.setChecked(selectedPackages.contains(packageName));
 
+        // Mostrar color guardado (si existe)
+        int savedColor = MonitorHelper.getAppColor(holder.itemView.getContext(), packageName);
+        holder.viewAppColor.setBackgroundColor(savedColor);
+
         holder.itemView.setOnClickListener(v -> {
             if (selectedPackages.contains(packageName)) {
                 selectedPackages.remove(packageName);
@@ -73,12 +82,14 @@ public class AppSelectionAdapter extends RecyclerView.Adapter<AppSelectionAdapte
         ImageView imageViewAppIcon;
         TextView textViewAppName;
         CheckBox checkBox;
+        View viewAppColor;
 
         public AppViewHolder(@NonNull View itemView) {
             super(itemView);
             imageViewAppIcon = itemView.findViewById(R.id.imageViewAppIcon);
             textViewAppName = itemView.findViewById(R.id.textViewAppName);
             checkBox = itemView.findViewById(R.id.checkBoxApp);
+            viewAppColor = itemView.findViewById(R.id.viewAppColor);
         }
     }
 }

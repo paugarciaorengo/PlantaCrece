@@ -29,13 +29,13 @@ import com.github.mikephil.charting.data.BarDataSet;
 import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
+import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.helpers.BottomNavigationHelper;
 import com.pim.planta.base.NotificationActivity;
 import com.pim.planta.R;
+import com.pim.planta.models.UserPlantRelation;
 import com.pim.planta.ui.components.UsageMarkerView;
 import com.pim.planta.db.DAO;
-import com.pim.planta.db.DatabaseExecutor;
-import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;
@@ -66,16 +66,16 @@ public class PerfilActivity extends NotificationActivity {
     private static final String PLANT_PREFS = "plant_prefs";
     private static final String SELECTED_PLANT_KEY = "selectedPlant";
     private static final String[] SOCIAL_APPS = {
-            "Instagram", "TikTok", "YouTube", "Twitter", "Facebook"
+            "YouTube", "TikTok","Instagram", "Twitter", "Facebook"
     };
 
     // Colores pastel para las barras
     private static final int[] CHART_COLORS = {
-            Color.argb(180, 76,175,80),
-            Color.argb(180,139,195,74),
-            Color.argb(180,205,220,57),
-            Color.argb(180,255,241,118),
-            Color.argb(180,255,213,79)
+            Color.rgb(255, 0, 0),     // YouTube
+            Color.rgb(0, 0, 0),       // TikTok
+            Color.rgb(255, 90, 150),  // Instagram
+            Color.rgb(29, 161, 242),  // Twitter
+            Color.rgb(24, 119, 242)   // Facebook
     };
 
     // Vistas
@@ -179,12 +179,25 @@ public class PerfilActivity extends NotificationActivity {
     private void loadPlantInfo() {
         SharedPreferences prefs = getSharedPreferences(PLANT_PREFS, MODE_PRIVATE);
         String name = prefs.getString(SELECTED_PLANT_KEY, "");
-        PlantRepository repo = PlantRepository.getInstance(this);
-        dao = repo.getPlantaDAO();
         if (!name.isEmpty()) {
-            DatabaseExecutor.executeAndWait(() -> plant = dao.getPlantaByName(name));
+            PlantooRepository repo = PlantooRepository.getInstance(this);
+            repo.getPlantByName(name).thenAccept(plant -> {
+                this.plant = plant;
+                String userId = UserLogged.getInstance().getCurrentUser().getUid();
+                repo.getRelationsForUser(userId).thenAccept(relations -> {
+                    for (UserPlantRelation relation : relations) {
+                        if (relation.getPlantId().equals(plant.getId())) {
+                            runOnUiThread(() -> updateUIWithRelation(relation));
+                            return;
+                        }
+                    }
+                    runOnUiThread(this::updateUI); // fallback si no se encuentra relación
+                });
+            });
         }
     }
+
+
 
     private void updateUI() {
         User user = UserLogged.getInstance().getCurrentUser();
@@ -194,7 +207,7 @@ public class PerfilActivity extends NotificationActivity {
         }
         if (plant != null) {
             scientificNameTextView.setText("Scientific plant name: " + plant.getScientificName());
-            nicknameTextView.setText("Plant nickname: " + plant.getNickname());
+            nicknameTextView.setText("Plant nickname: -");
         }
         updateGraphAndData(currentWeek);
     }
@@ -413,4 +426,20 @@ public class PerfilActivity extends NotificationActivity {
         SimpleDateFormat fmt = new SimpleDateFormat("dd MMM",Locale.getDefault());
         weekLabel.setText(fmt.format(start)+" – "+fmt.format(end));
     }
+
+    private void updateUIWithRelation(UserPlantRelation relation) {
+        User user = UserLogged.getInstance().getCurrentUser();
+        if (user != null) {
+            userNameTextView.setText(user.getUsername());
+            creationDateTextView.setText("Bloomed on: " + user.getFormattedCreationDate());
+        }
+
+        if (plant != null) {
+            scientificNameTextView.setText("Scientific plant name: " + plant.getScientificName());
+            nicknameTextView.setText("Plant nickname: " + relation.getNickname());
+        }
+
+        updateGraphAndData(currentWeek);
+    }
+
 }

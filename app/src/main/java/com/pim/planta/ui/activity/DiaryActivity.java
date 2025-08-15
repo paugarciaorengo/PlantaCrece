@@ -107,9 +107,15 @@ public class DiaryActivity extends NotificationActivity {
                             calendarDraw.getCurrentMonth(),
                             clickedDay
                     );
-                    calendarDraw.highlightDay(selectedDate);
-                    dateTextView.setText(selectedDate.toString());
-                    loadExistingEntry(selectedDate.toString());
+
+                    LocalDate today = LocalDate.now();
+                    if (!selectedDate.isAfter(today)) {
+                        calendarDraw.highlightDay(selectedDate);
+                        dateTextView.setText(selectedDate.toString());
+                        loadExistingEntry(selectedDate.toString());
+                    } else {
+                        Toast.makeText(this, "No puedes seleccionar un día futuro", Toast.LENGTH_SHORT).show();
+                    }
                 }
             }
             return false;
@@ -129,16 +135,20 @@ public class DiaryActivity extends NotificationActivity {
             int id = v.getId();
             if (id == R.id.excitedImage) {
                 selectedEmotionCode = 1;
+                Toast.makeText(this, "Muy feliz seleccionado", Toast.LENGTH_SHORT).show();
             } else if (id == R.id.happyImage) {
                 selectedEmotionCode = 2;
+                Toast.makeText(this, "Feliz seleccionado", Toast.LENGTH_SHORT).show();
             } else if (id == R.id.neutralImage) {
                 selectedEmotionCode = 3;
+                Toast.makeText(this, "Triste seleccionado", Toast.LENGTH_SHORT).show();
             } else if (id == R.id.sadImage) {
                 selectedEmotionCode = 4;
+                Toast.makeText(this, "Enfadado seleccionado", Toast.LENGTH_SHORT).show();
             } else if (id == R.id.verySadImage) {
                 selectedEmotionCode = 5;
+                Toast.makeText(this, "Preocupado seleccionado", Toast.LENGTH_SHORT).show();
             }
-            Toast.makeText(this, "Emoción seleccionada", Toast.LENGTH_SHORT).show();
         };
 
         excited.setOnClickListener(listener);
@@ -165,7 +175,8 @@ public class DiaryActivity extends NotificationActivity {
         }
 
         DatabaseExecutor.execute(() -> {
-            plantooRepository.insertDiaryEntry(currentUser.getId(), selectedEmotionCode, highlight, note, date);
+            plantooRepository.insertDiaryEntry("shared_diary", selectedEmotionCode, highlight, note, date);
+
             runOnUiThread(() -> {
                 Toast.makeText(this, "Entrada guardada", Toast.LENGTH_SHORT).show();
                 reloadEntriesForCurrentMonth();
@@ -175,9 +186,9 @@ public class DiaryActivity extends NotificationActivity {
 
     private void loadExistingEntry(String date) {
         DatabaseExecutor.execute(() -> {
-            int emotion = plantooRepository.getEmotionCodeByUserAndDate(currentUser.getId(), date);
-            String annotation = plantooRepository.getNoteByUserAndDate(currentUser.getId(), date);
-            String highlight = plantooRepository.getHighlightByUserAndDate(currentUser.getId(), date);
+            int emotion = plantooRepository.getEmotionCodeByUserAndDate("shared_diary", date);
+            String annotation = plantooRepository.getNoteByUserAndDate("shared_diary", date);
+            String highlight = plantooRepository.getHighlightByUserAndDate("shared_diary", date);
 
             runOnUiThread(() -> {
                 selectedEmotionCode = emotion;
@@ -221,8 +232,9 @@ public class DiaryActivity extends NotificationActivity {
     private void reloadEntriesForCurrentMonth() {
         int year = calendarDraw.getCurrentYear();
         int month = calendarDraw.getCurrentMonth();
+
         DatabaseExecutor.execute(() -> {
-            List<DiaryEntry> entries = plantooRepository.getEntriesByUserAndMonth(currentUser.getId(), year, month);
+            List<DiaryEntry> entries = plantooRepository.getEntriesByUserAndMonth("shared_diary", year, month);
             runOnUiThread(() -> calendarDraw.setDiaryEntries(entries));
         });
     }

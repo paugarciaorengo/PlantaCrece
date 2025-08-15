@@ -15,6 +15,7 @@
     <string name="very_sad">Very sad</string>
     <string name="no_emotion">No emotion</string>
     <string name="settings">Ajustes</string>
+    <string name="plant_image_desc">Imagen de la planta</string>
 
 
     <!-- Calendario -->
@@ -30,4 +31,7 @@
     <!-- Mensajes -->
     <string name="already_displayed_all_plants">You have already displayed all of this plant type</string>
     <string name="please_enable_usage_access">Please enable usage access in system settings</string>
+
+    <string name="default_web_client_id">xxx.apps.googleusercontent.com</string>
+
 </resources>

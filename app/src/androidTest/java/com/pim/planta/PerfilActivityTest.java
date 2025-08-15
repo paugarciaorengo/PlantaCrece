@@ -28,7 +28,6 @@ import androidx.test.rule.GrantPermissionRule;
 
 import com.pim.planta.db.DAO;
 import com.pim.planta.db.DatabasePlantoo;
-import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.UserLogged;
 import com.pim.planta.ui.activity.PerfilActivity;

@@ -17,7 +17,6 @@ import androidx.test.ext.junit.rules.ActivityScenarioRule;
 import androidx.test.ext.junit.runners.AndroidJUnit4;
 
 import com.pim.planta.db.DatabasePlantoo;
-import com.pim.planta.db.PlantRepository;
 import com.pim.planta.models.DiaryEntry;
 import com.pim.planta.models.User;
 import com.pim.planta.models.UserLogged;

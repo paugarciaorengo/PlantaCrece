@@ -32,6 +32,7 @@ public class CalendarDraw extends View {
     private LocalDate highlightedDay;
     private List<DiaryEntry> diaryEntries;
     private Runnable monthChangeListener;
+    private Paint futureDayPaint;
 
     public CalendarDraw(Context context, AttributeSet attrs) {
         super(context, attrs);
@@ -63,6 +64,8 @@ public class CalendarDraw extends View {
         LocalDate today = LocalDate.now();
         currentMonth = today.getMonthValue();
         currentYear = today.getYear();
+
+        futureDayPaint = createPaint(Color.parseColor("#CCCCCC"), 46, Paint.Align.CENTER, customFont);
     }
 
     private Paint createPaint(int color, float textSize, Paint.Align align, Typeface typeface) {
@@ -122,9 +125,12 @@ public class CalendarDraw extends View {
             if (isHighlighted) {
                 canvas.drawCircle(x, y, dayWidth / 3f, highlightedDayCircle);
                 canvas.drawText(String.valueOf(day), x, y + 10, highlightedDayPaint);
+            } else if (currentDate.isAfter(LocalDate.now())) {
+                canvas.drawText(String.valueOf(day), x, y + 10, futureDayPaint);
             } else {
                 canvas.drawText(String.valueOf(day), x, y + 10, dayPaint);
             }
+
 
             if (diaryEntries != null) {
                 for (DiaryEntry entry : diaryEntries) {
@@ -265,16 +271,16 @@ public class CalendarDraw extends View {
                 color = getResources().getColor(R.color.excited_green); // Define este color en colors.xml
                 break;
             case 2: // Happy
-                color = getResources().getColor(R.color.happy_yellow);
+                color = getResources().getColor(R.color.happy_green);
                 break;
-            case 3: // Neutral
-                color = getResources().getColor(R.color.neutral_gray);
-                break;
-            case 4: // Sad
+            case 3: // Sad
                 color = getResources().getColor(R.color.sad_blue);
                 break;
-            case 5: // Very sad
-                color = getResources().getColor(R.color.very_sad_purple);
+            case 4: // Angry
+                color = getResources().getColor(R.color.ungry_red);
+                break;
+            case 5: // Scared
+                color = getResources().getColor(R.color.scared_gray);
                 break;
             default:
                 color = Color.LTGRAY;

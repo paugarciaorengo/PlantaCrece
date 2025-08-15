@@ -55,6 +55,8 @@ dependencies {
     implementation(libs.credentials)
     implementation(libs.credentials.play.services.auth)
     implementation(libs.googleid)
+    implementation(libs.firebase.firestore)
+    implementation(libs.firebase.messaging)
     testImplementation(libs.ext.junit)
     testImplementation(libs.ext.junit)
     annotationProcessor(libs.room.compiler)
@@ -66,6 +68,9 @@ dependencies {
     implementation(libs.espresso.intents)
     implementation("com.google.guava:guava:33.0.0-jre")
     implementation ("androidx.preference:preference:1.1.1")
+    implementation ("com.google.android.gms:play-services-auth:21.0.0")
+    implementation ("com.github.yukuku:ambilwarna:2.0.1")
+    implementation("com.github.skydoves:colorpickerview:2.2.4")
 
 
     // Mockito
@@ -88,6 +93,10 @@ dependencies {
     testImplementation(libs.work.testing)
 
     implementation(libs.lottie)
+
+    configurations.all {
+        exclude(group = "com.google.protobuf", module = "protobuf-lite")
+    }
 }
 
 kover {
