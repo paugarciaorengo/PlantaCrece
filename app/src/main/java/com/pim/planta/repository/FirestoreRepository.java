@@ -7,6 +7,7 @@ import com.pim.planta.models.MyPlant;
 import com.pim.planta.models.Plant;
 import com.pim.planta.models.UserPlantRelation;
 import com.pim.planta.models.User;
+import com.pim.planta.models.UserPot;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executors;
@@ -484,10 +485,38 @@ public class FirestoreRepository {
 
     public CompletableFuture<Void> savePlantToMyPlants(String userId, MyPlant myPlant) {
         CompletableFuture<Void> future = new CompletableFuture<>();
+        if (userId == null || myPlant == null || myPlant.getPlantId() == null) {
+            future.completeExceptionally(new IllegalArgumentException("userId/plantId nulos"));
+            return future;
+        }
         db.collection("users")
                 .document(userId)
                 .collection("myPlants")
-                .add(myPlant)
+                .document(myPlant.getPlantId()) // usamos plantId como ID único
+                .set(myPlant, SetOptions.merge()) // merge evita sobrescribir completo
+                .addOnSuccessListener(unused -> future.complete(null))
+                .addOnFailureListener(future::completeExceptionally);
+        return future;
+    }
+
+
+    // Saber si ya existe el trofeo
+    public CompletableFuture<Boolean> hasMyPlant(String userId, String plantId) {
+        CompletableFuture<Boolean> future = new CompletableFuture<>();
+        db.collection("users").document(userId)
+                .collection("myPlants").document(plantId)
+                .get()
+                .addOnSuccessListener(doc -> future.complete(doc.exists()))
+                .addOnFailureListener(future::completeExceptionally);
+        return future;
+    }
+
+    // Borrar un trofeo concreto
+    public CompletableFuture<Void> removeMyPlant(String userId, String plantId) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+        db.collection("users").document(userId)
+                .collection("myPlants").document(plantId)
+                .delete()
                 .addOnSuccessListener(unused -> future.complete(null))
                 .addOnFailureListener(future::completeExceptionally);
         return future;
@@ -495,14 +524,15 @@ public class FirestoreRepository {
 
     public CompletableFuture<List<MyPlant>> getUserMyPlants(String userId) {
         CompletableFuture<List<MyPlant>> future = new CompletableFuture<>();
-        db.collection("users")
-                .document(userId)
-                .collection("myPlants")
+        db.collection("users").document(userId).collection("myPlants")
                 .get()
                 .addOnSuccessListener(query -> {
                     List<MyPlant> list = new ArrayList<>();
                     for (DocumentSnapshot doc : query.getDocuments()) {
                         MyPlant mp = doc.toObject(MyPlant.class);
+                        if (mp != null && mp.getPlantId() == null) {
+                            mp.setPlantId(doc.getId()); // asegura el id
+                        }
                         list.add(mp);
                     }
                     future.complete(list);
@@ -510,6 +540,206 @@ public class FirestoreRepository {
                 .addOnFailureListener(future::completeExceptionally);
         return future;
     }
+
+    public CompletableFuture<Void> promotePlantToMyPlants(String userId, String relationId, String plantId) {
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        DocumentReference plantRef = db.collection("plants").document(plantId);
+        DocumentReference relRef = db.collection("user_plant_relation").document(relationId);
+        DocumentReference myPlantRef = db.collection("users")
+                .document(userId)
+                .collection("myPlants")
+                .document(plantId);
+
+        db.runTransaction(tx -> {
+                    // 1. Leer documentos
+                    DocumentSnapshot plantDoc = tx.get(plantRef);
+                    DocumentSnapshot relDoc = tx.get(relRef);
+                    DocumentSnapshot myPlantDoc = tx.get(myPlantRef);
+
+                    if (!plantDoc.exists() || !relDoc.exists()) {
+                        throw new IllegalStateException("Plant or relation not found");
+                    }
+
+                    Long xpMax = plantDoc.getLong("xpMax");
+                    Long xp = relDoc.getLong("xp");
+                    String nickname = relDoc.getString("nickname");
+                    Long growCount = relDoc.getLong("growCount"); // si usas etapas
+
+                    // 2. Comprobar condición
+                    if (xpMax == null || xp == null || xp < xpMax) {
+                        throw new IllegalStateException("Not eligible to promote (xp < xpMax)");
+                    }
+
+                    // 3. Crear trofeo en myPlants si no existe ya
+                    if (!myPlantDoc.exists()) {
+                        MyPlant myPlant = new MyPlant(
+                                plantId,
+                                nickname != null ? nickname : "",
+                                xp.intValue(),
+                                growCount != null ? growCount.intValue() : null,
+                                null, // artVariant opcional
+                                null  // completedAt lo rellena @ServerTimestamp
+                        );
+                        tx.set(myPlantRef, myPlant, SetOptions.merge());
+                    }
+
+                    // 4. Marcar relación como completada
+                    Map<String, Object> updates = new HashMap<>();
+                    updates.put("status", "COMPLETED");
+                    updates.put("completedAt", FieldValue.serverTimestamp());
+                    tx.set(relRef, updates, SetOptions.merge());
+
+                    return null;
+                }).addOnSuccessListener(unused -> future.complete(null))
+                .addOnFailureListener(future::completeExceptionally);
+
+        return future;
+    }
+
+    // Crear N macetas básicas si el usuario no tiene ninguna
+    public CompletableFuture<Void> grantInitialPots(String uid, int count) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        CollectionReference potsCol = db.collection("users").document(uid).collection("pots");
+
+        potsCol.limit(1).get().addOnSuccessListener(snap -> {
+            if (!snap.isEmpty()) { f.complete(null); return; } // ya tiene
+            WriteBatch batch = db.batch();
+            for (int i = 0; i < count; i++) {
+                String id = UUID.randomUUID().toString();
+                DocumentReference ref = potsCol.document(id);
+                UserPot pot = new UserPot(id, "basic_01", "maceta", false);
+                batch.set(ref, pot);
+            }
+            batch.commit().addOnSuccessListener(v -> f.complete(null))
+                    .addOnFailureListener(f::completeExceptionally);
+        }).addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // Obtener macetas colocadas (para pintar en pantalla)
+    public CompletableFuture<List<UserPot>> getPlacedPots(String uid) {
+        CompletableFuture<List<UserPot>> f = new CompletableFuture<>();
+        FirebaseFirestore.getInstance()
+                .collection("users").document(uid).collection("pots")
+                .whereEqualTo("placed", true).get()
+                .addOnSuccessListener(snap -> {
+                    List<UserPot> out = new ArrayList<>();
+                    for (DocumentSnapshot d : snap) out.add(d.toObject(UserPot.class));
+                    f.complete(out);
+                }).addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // Obtener inventario (no colocadas)
+    public CompletableFuture<List<UserPot>> getInventoryPots(String uid) {
+        CompletableFuture<List<UserPot>> f = new CompletableFuture<>();
+        FirebaseFirestore.getInstance()
+                .collection("users").document(uid).collection("pots")
+                .whereEqualTo("placed", false).get()
+                .addOnSuccessListener(snap -> {
+                    List<UserPot> out = new ArrayList<>();
+                    for (DocumentSnapshot d : snap) out.add(d.toObject(UserPot.class));
+                    f.complete(out);
+                }).addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // Colocar una del inventario en (x,y)
+    public CompletableFuture<Void> placePot(String uid, String potInstanceId, int x, int y) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore.getInstance()
+                .collection("users").document(uid).collection("pots").document(potInstanceId)
+                .update("placed", true, "x", x, "y", y)
+                .addOnSuccessListener(v -> f.complete(null))
+                .addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // Mover una ya colocada
+    public CompletableFuture<Void> movePot(String uid, String potInstanceId, int x, int y) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore.getInstance()
+                .collection("users").document(uid).collection("pots").document(potInstanceId)
+                .update("x", x, "y", y)
+                .addOnSuccessListener(v -> f.complete(null))
+                .addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // Retirar (volver al inventario)
+    public CompletableFuture<Void> unplacePot(String uid, String potInstanceId) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore.getInstance()
+                .collection("users").document(uid).collection("pots").document(potInstanceId)
+                .update("placed", false, "x", null, "y", null)
+                .addOnSuccessListener(v -> f.complete(null))
+                .addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
+    // FirestoreRepository.java
+    public CompletableFuture<Void> assignPlantToPot(String uid, String potId, String plantId) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference potRef   = db.collection("users").document(uid)
+                .collection("pots").document(potId);
+        DocumentReference plantRef = db.collection("users").document(uid)
+                .collection("myPlants").document(plantId);
+
+        db.runTransaction(tx -> {
+                    DocumentSnapshot plantSnap = tx.get(plantRef);
+                    DocumentSnapshot potSnap   = tx.get(potRef);
+
+                    // 1) Si la planta ya está en otra maceta → error (unicidad)
+                    String existingPotForPlant = plantSnap.getString("assignedPotId");
+                    if (existingPotForPlant != null && !existingPotForPlant.equals(potId)) {
+                        throw new FirebaseFirestoreException(
+                                "Esta planta ya está colocada en otra maceta.",
+                                FirebaseFirestoreException.Code.ABORTED);
+                    }
+
+                    // 2) Si la maceta tenía otra planta, libérala
+                    String prevPlantOnPot = potSnap.getString("assignedPlantId");
+                    if (prevPlantOnPot != null && !prevPlantOnPot.equals(plantId)) {
+                        DocumentReference prevPlantRef = db.collection("users").document(uid)
+                                .collection("myPlants").document(prevPlantOnPot);
+                        tx.update(prevPlantRef, "assignedPotId", null);
+                    }
+
+                    // 3) Asignar en ambos sentidos
+                    tx.update(potRef,   "assignedPlantId", plantId);
+                    tx.update(plantRef, "assignedPotId", potId);
+
+                    return null;
+                }).addOnSuccessListener(v -> f.complete(null))
+                .addOnFailureListener(f::completeExceptionally);
+
+        return f;
+    }
+
+    public CompletableFuture<Void> unassignPlantFromPot(String uid, String potId) {
+        CompletableFuture<Void> f = new CompletableFuture<>();
+        FirebaseFirestore db = FirebaseFirestore.getInstance();
+        DocumentReference potRef = db.collection("users").document(uid)
+                .collection("pots").document(potId);
+
+        db.runTransaction(tx -> {
+                    DocumentSnapshot potSnap = tx.get(potRef);
+                    String plantId = potSnap.getString("assignedPlantId");
+                    if (plantId != null) {
+                        DocumentReference plantRef = db.collection("users").document(uid)
+                                .collection("myPlants").document(plantId);
+                        tx.update(plantRef, "assignedPotId", null);
+                        tx.update(potRef,   "assignedPlantId", null);
+                    }
+                    return null;
+                }).addOnSuccessListener(v -> f.complete(null))
+                .addOnFailureListener(f::completeExceptionally);
+        return f;
+    }
+
 
 
 }

@@ -1,4 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <dimen name="year_selector_empty_space_width">60dp</dimen> <!-- Adjust as needed -->
+
+    <dimen name="pot_size">128dp</dimen>              <!-- antes ~96dp -->
+    <dimen name="plant_overlay_size">96dp</dimen>     <!-- planta encima -->
+    <dimen name="pots_menu_height">120dp</dimen>      <!-- alto del inventario -->
+    <dimen name="pot_item_padding">8dp</dimen>
+    <dimen name="pot_item_radius">12dp</dimen>
+
+    <dimen name="plant_card_size">140dp</dimen>
 </resources>

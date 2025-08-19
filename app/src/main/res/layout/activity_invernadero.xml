@@ -1,162 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/rootInvernadero"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="@drawable/invernadero2">
+    android:layout_height="match_parent">
 
+    <!-- Fondo dinámico (día/noche) -->
+    <ImageView
+        android:id="@+id/bgInvernadero"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:scaleType="centerCrop"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- Contenedor de jardín (macetas/plantas se añaden dinámicamente aquí) -->
+    <FrameLayout
+        android:id="@+id/gardenLayout"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@android:color/transparent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintBottom_toTopOf="@+id/potsMenu"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+    <!-- Menú horizontal de macetas -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/potsMenu"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/pots_menu_height"
+        android:padding="12dp"
+        android:clipToPadding="false"
+        android:background="#66000000"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintBottom_toBottomOf="parent" />
+
+    <!-- Botón ojo para ir al jardín -->
     <ImageButton
         android:id="@+id/imageButtonOjo"
         android:layout_width="48dp"
         android:layout_height="48dp"
-        android:layout_marginTop="40dp"
+        android:layout_margin="16dp"
         android:background="@null"
-        android:contentDescription="desc_eye_button"
         android:scaleType="fitCenter"
         android:src="@drawable/buton_ojo"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+       app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:layout_width="264dp"
-        android:layout_height="185dp"
-        android:text=""
-        android:fontFamily="@font/aventa"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.239" />
-<!--
-        <Button
-            android:id="@+id/buttonMenos1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="-1"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.458"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.98" />
-
-
-        <Button
-            android:id="@+id/buttonMas1"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="140dp"
-            android:text="+1"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintHorizontal_bias="0.498"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.921" />   -->
-
-        <ImageView
-            android:layout_width="354dp"
-            android:layout_height="318dp"
-            android:layout_marginStart="248dp"
-            android:layout_marginTop="440dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/maceta" />
-        <ImageView
-            android:layout_width="358dp"
-            android:layout_height="791dp"
-            android:layout_marginTop="208dp"
-            android:layout_marginEnd="48dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/maceta" />
-
-
-        <ImageView
-            android:id="@+id/plantoo"
-            android:layout_width="179dp"
-            android:layout_height="140dp"
-            android:layout_marginStart="4dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintVertical_bias="0.596"/>
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="604dp"
-            android:layout_marginEnd="12dp"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/maceta" />
-
-        <ImageView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="216dp"
-            android:layout_marginTop="604dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/maceta" />
-
-        <ImageView
-            android:layout_width="398dp"
-            android:layout_height="850dp"
-            android:layout_marginStart="120dp"
-            android:layout_marginTop="272dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/maceta" />
-
-        <ImageView
-            android:id="@+id/imageView9"
-            android:layout_width="124dp"
-            android:layout_height="307dp"
-            android:layout_marginStart="256dp"
-            android:layout_marginTop="572dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/agregar_planta" />
-
-        <ImageView
-            android:id="@+id/imageView"
-            android:layout_width="124dp"
-            android:layout_height="307dp"
-            android:layout_marginStart="28dp"
-            android:layout_marginTop="572dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/agregar_planta" />
-
-        <ImageView
-            android:id="@+id/imageView10"
-            android:layout_width="124dp"
-            android:layout_height="307dp"
-            android:layout_marginStart="276dp"
-            android:layout_marginTop="384dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/agregar_planta" />
-
-    <ImageView
-        android:id="@+id/imageView11"
-        android:layout_width="124dp"
-        android:layout_height="307dp"
-        android:layout_marginStart="24dp"
-        android:layout_marginTop="148dp"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:srcCompat="@drawable/agregar_planta" />
-
-    <ImageView
-            android:id="@+id/imageView2"
-            android:layout_width="124dp"
-            android:layout_height="307dp"
-            android:layout_marginStart="152dp"
-            android:layout_marginTop="476dp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:srcCompat="@drawable/agregar_planta" />
-
-    </androidx.constraintlayout.widget.ConstraintLayout>
+</androidx.constraintlayout.widget.ConstraintLayout>

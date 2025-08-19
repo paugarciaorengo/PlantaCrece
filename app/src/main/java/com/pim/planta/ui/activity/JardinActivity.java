@@ -36,6 +36,7 @@ import androidx.work.WorkRequest;
 import com.airbnb.lottie.LottieAnimationView;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.pim.planta.db.PlantooRepository;
 import com.pim.planta.helpers.BottomNavigationHelper;
 import com.pim.planta.helpers.CooldownManager;
 import com.pim.planta.base.NotificationActivity;
@@ -55,6 +56,8 @@ public class JardinActivity extends NotificationActivity {
     private static final int NOTIFICATION_PERMISSION_CODE = 100;
     private static final int WATER_XP = 300;
     public static int currentImageIndex = 1;
+
+    private static final int XP_PER_FORCE_WATER = 50;
 
     private Plant plant;
     private UserPlantRelation relation;
@@ -196,7 +199,7 @@ public class JardinActivity extends NotificationActivity {
         int gain = Math.min(WATER_XP, xpMax - xp);
 
         relation.setXp(xp + gain);
-        cooldownManager.recordWateringUsage();
+        //cooldownManager.recordWateringUsage();
         repository.updateUserPlantRelation(relation);
 
         // NUEVO: si alcanzó el XP máximo, subir growCount
@@ -260,53 +263,54 @@ public class JardinActivity extends NotificationActivity {
 
     private void showPlantGrownPopup() {
         View popupView = LayoutInflater.from(this).inflate(R.layout.popup_plant_grown, null);
-        PopupWindow popupWindow = new PopupWindow(popupView,
+        final PopupWindow popupWindow = new PopupWindow(
+                popupView,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT,
-                true);
+                true
+        );
         popupWindow.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
         popupWindow.setElevation(20);
 
         ((TextView) popupView.findViewById(R.id.popup_title)).setText("¡Felicidades!");
         ((TextView) popupView.findViewById(R.id.popup_message))
-                .setText("¡Tu planta ha crecido completamente!\nGuárdala antes de que su nivel vuelva a bajar.");
+                .setText("¡Tu planta ha crecido completamente!\nGuárdala en tu colección.");
 
-        popupView.findViewById(R.id.popup_button_view_plants).setOnClickListener(v -> {
+        View confirmBtn = popupView.findViewById(R.id.popup_button_view_plants);
+        confirmBtn.setOnClickListener(v -> {
             String userId = UserLogged.getInstance().getCurrentUser().getUid();
+            // Evita toques repetidos
+            v.setEnabled(false);
 
-            // ✅ Calcular nivel antes de borrar XP
-            int level = (int) Math.floor(Math.sqrt((double) relation.getXp() / plant.getXpMax()) * 5);
-            String nickname = relation.getNickname() != null ? relation.getNickname() : plant.getName();
-
-            // ✅ Crear objeto MyPlant
-            MyPlant myPlant = new MyPlant(
-                    plant.getId(),
-                    nickname,
-                    System.currentTimeMillis(),
-                    level
-            );
-
-            // ✅ Guardar en Firestore
-            repository.savePlantToMyPlants(userId, myPlant);
-            repository.incrementUserPlantGrowCount(userId, plant.getId());
-
-            // ✅ Resetear planta actual
-            relation.setXp(0);
-            relation.setNickname(null);
-            repository.updateUserPlantRelation(relation);
-
-            // ✅ Deseleccionar planta
-            FirebaseFirestore.getInstance().collection("users").document(userId)
-                    .update("selectedPlant", null)
-                    .addOnSuccessListener(unused -> {
-                        UserLogged.getInstance().getCurrentUser().setSelectedPlant(null);
-                        startActivity(new Intent(JardinActivity.this, PlantListActivity.class));
-                        popupWindow.dismiss();
+            // Promoción atómica: valida xp>=xpMax, crea trofeo en myPlants y marca la relación como COMPLETED
+            repository.promotePlantToMyPlants(userId, relation.getId(), plant.getId())
+                    .thenAccept(ignored -> runOnUiThread(() -> {
+                        // Deseleccionar planta activa del usuario
+                        FirebaseFirestore.getInstance()
+                                .collection("users").document(userId)
+                                .update("selectedPlant", null)
+                                .addOnSuccessListener(unused -> {
+                                    UserLogged.getInstance().getCurrentUser().setSelectedPlant(null);
+                                    startActivity(new Intent(JardinActivity.this, PlantListActivity.class));
+                                    popupWindow.dismiss();
+                                })
+                                .addOnFailureListener(e -> {
+                                    v.setEnabled(true);
+                                    Toast.makeText(this, "Error deseleccionando planta: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                                });
+                    }))
+                    .exceptionally(ex -> {
+                        runOnUiThread(() -> {
+                            v.setEnabled(true);
+                            Toast.makeText(this, "No se pudo guardar la planta: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                        });
+                        return null;
                     });
         });
 
         popupWindow.showAtLocation(popupView, Gravity.CENTER, 0, 0);
     }
+
 
     private void showDescriptionPopup() {
         View popupView = findViewById(R.id.plant_desc_popup);
