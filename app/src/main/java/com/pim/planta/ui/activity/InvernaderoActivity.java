@@ -42,15 +42,15 @@ import java.util.Locale;
 public class InvernaderoActivity extends NotificationActivity {
 
     // Vacía = cuadrada; Combinada = rectángulo (alto = ancho * RATIO)
-    private static final int POT_SIZE_EMPTY_DP    = 96;   // ancho base maceta vacía
-    private static final int POT_SIZE_COMBINED_DP = 192;  // ancho base maceta combinada (ajústalo a gusto)
-    private static final float POT_WITH_PLANT_RATIO = 2f; // alto = ancho * ratio cuando hay planta
-    private static final int PLANT_BOTTOM_MARGIN_DP = 8;  // margen inferior del overlay
+    private static final int POT_SIZE_EMPTY_DP    = 96;
+    private static final int POT_SIZE_COMBINED_DP = 192;
+    private static final float POT_WITH_PLANT_RATIO = 2f;
+    private static final int PLANT_BOTTOM_MARGIN_DP = 8;
 
-    private static final int EJECT_MARGIN_DP = 32;        // cuánto hay que salir para “expulsar”
-    private static final float ACTIVE_HIT_HEIGHT_RATIO = 0.60f; // parte “activa” (inferior) del contenedor
-    private static final float EDGE_OVERFLOW_RATIO_X = 0.35f; // 35% del ancho puede quedar fuera (izq/der)
-    private static final float EDGE_OVERFLOW_RATIO_Y = 0.20f; // 20% del alto puede quedar fuera (arr/abajo)
+    private static final int EJECT_MARGIN_DP = 32;
+    private static final float ACTIVE_HIT_HEIGHT_RATIO = 0.60f;
+    private static final float EDGE_OVERFLOW_RATIO_X = 0.35f;
+    private static final float EDGE_OVERFLOW_RATIO_Y = 0.20f;
     private int clamp(int v, int min, int max) { return Math.max(min, Math.min(max, v)); }
 
     private FrameLayout gardenLayout;
@@ -147,6 +147,7 @@ public class InvernaderoActivity extends NotificationActivity {
                     Object local = event.getLocalState();
                     if (local instanceof UserPot) {
                         UserPot pot = (UserPot) local;
+                        // Tratamos X/Y del drop como CENTRO
                         placePotAndRender(pot, (int) event.getX(), (int) event.getY());
                     }
                     return true;
@@ -158,12 +159,13 @@ public class InvernaderoActivity extends NotificationActivity {
         });
     }
 
-    private void placePotAndRender(UserPot pot, int x, int y) {
+    private void placePotAndRender(UserPot pot, int xCenter, int yCenter) {
         String uid = UserLogged.getInstance().getCurrentUser().getUid();
-        firestoreRepository.placePot(uid, pot.getId(), x, y).thenAccept(v -> {
+        // Guardamos centros en Firestore
+        firestoreRepository.placePot(uid, pot.getId(), xCenter, yCenter).thenAccept(v -> {
             pot.setPlaced(true);
-            pot.setX(x);
-            pot.setY(y);
+            pot.setX(xCenter);
+            pot.setY(yCenter);
             runOnUiThread(() -> {
                 renderPlacedPot(pot);
                 potsAdapter.removeById(pot.getId());
@@ -187,12 +189,12 @@ public class InvernaderoActivity extends NotificationActivity {
         container.setTag(pot.getId());
         container.setClickable(true);
 
-        // posición centrada según tamaño actual
+        // pot.getX()/getY() = CENTRO guardado → convertimos a márgenes (esquina sup-izq)
         FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(w, h);
-        int x = pot.getX() != null ? pot.getX() : gardenLayout.getWidth() / 2;
-        int y = pot.getY() != null ? pot.getY() : gardenLayout.getHeight() / 2;
-        params.leftMargin = Math.max(0, x - w / 2);
-        params.topMargin  = Math.max(0, y - h / 2);
+        int cx = pot.getX() != null ? pot.getX() : gardenLayout.getWidth() / 2;
+        int cy = pot.getY() != null ? pot.getY() : gardenLayout.getHeight() / 2;
+        params.leftMargin = Math.max(0, cx - w / 2);
+        params.topMargin  = Math.max(0, cy - h / 2);
 
         // base de maceta
         ImageView potIv = new ImageView(this);
@@ -219,13 +221,10 @@ public class InvernaderoActivity extends NotificationActivity {
                     ImageView base = (ImageView) container.findViewWithTag("potBase");
                     if (base != null) {
                         if (combo != 0) {
-                            // Combinada → estirar a todo el rectángulo
                             base.setAdjustViewBounds(false);
                             base.setScaleType(ImageView.ScaleType.FIT_XY);
                             base.setImageResource(combo);
-                            // sin overlay (opcional). Si quisieras overlay además, quita este bloque.
                         } else {
-                            // Sin combinada → mantenemos base y añadimos overlay
                             base.setAdjustViewBounds(true);
                             base.setScaleType(ImageView.ScaleType.FIT_CENTER);
                             addPlantOverlayToContainer(container, plant.getId());
@@ -265,7 +264,6 @@ public class InvernaderoActivity extends NotificationActivity {
         });
     }
 
-    /** Drag & tap. Más tolerante: hace snap dentro de límites y solo expulsa si sales mucho. */
     /** Drag & tap: permite overflow hacia los bordes y solo expulsa si te vas mucho más allá. */
     private void makePlacedViewDraggableAndPersist(View view, String potId) {
         final int slop = android.view.ViewConfiguration.get(this).getScaledTouchSlop();
@@ -304,14 +302,14 @@ public class InvernaderoActivity extends NotificationActivity {
                         int vw = v.getWidth();
                         int vh = v.getHeight();
 
-                        int newX = Math.round(v.getX());
+                        int newX = Math.round(v.getX()); // esquina sup-izq provisional
                         int newY = Math.round(v.getY());
 
-                        // Parte superior “inactiva” (aire) que podemos ignorar
-                        int trimTop = Math.round(vh * (1f - ACTIVE_HIT_HEIGHT_RATIO)); // ya la tienes definida
+                        // Parte superior “inactiva”
+                        int trimTop = Math.round(vh * (1f - ACTIVE_HIT_HEIGHT_RATIO));
                         int margin  = dp(EJECT_MARGIN_DP);
 
-                        // Rango permitido con overflow: puedes dejar parte del contenedor fuera
+                        // Rango permitido con overflow
                         int allowLeft   = -Math.round(vw * EDGE_OVERFLOW_RATIO_X);
                         int allowRight  =  gw - vw + Math.round(vw * EDGE_OVERFLOW_RATIO_X);
                         int allowTop    = -Math.max(Math.round(vh * EDGE_OVERFLOW_RATIO_Y), trimTop);
@@ -349,8 +347,19 @@ public class InvernaderoActivity extends NotificationActivity {
                         v.setX(clampedX);
                         v.setY(clampedY);
 
-                        // Persistimos la posición ajustada
-                        firestoreRepository.movePot(uid, potId, clampedX, clampedY);
+                        // 🔧 SINCRONIZAR LayoutParams para evitar micro-saltos al redimensionar
+                        ViewGroup.LayoutParams rawLp = v.getLayoutParams();
+                        if (rawLp instanceof FrameLayout.LayoutParams) {
+                            FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) rawLp;
+                            lp.leftMargin = clampedX;
+                            lp.topMargin  = clampedY;
+                            v.setLayoutParams(lp);
+                        }
+
+                        // 👉 Persistimos el CENTRO
+                        int centerX = clampedX + vw / 2;
+                        int centerY = clampedY + vh / 2;
+                        firestoreRepository.movePot(uid, potId, centerX, centerY);
                         return true;
                     }
                 }
@@ -358,8 +367,6 @@ public class InvernaderoActivity extends NotificationActivity {
             }
         });
     }
-
-
 
     /* ---------------- Selector de planta ---------------- */
 
@@ -457,7 +464,6 @@ public class InvernaderoActivity extends NotificationActivity {
                                 base.setAdjustViewBounds(false);
                                 base.setScaleType(ImageView.ScaleType.FIT_XY);
                                 base.setImageResource(combo);
-                                // sin overlay
                                 View old = fl.findViewWithTag("plantOverlay");
                                 if (old != null) fl.removeView(old);
                             } else {
@@ -468,6 +474,12 @@ public class InvernaderoActivity extends NotificationActivity {
                                 addPlantOverlayToContainer(fl, plantId);
                             }
                         }
+
+                        // 🔁 (Opcional/pulido) re-guardar el centro tras cambiar tamaño
+                        FrameLayout.LayoutParams lp = (FrameLayout.LayoutParams) fl.getLayoutParams();
+                        int centerX = lp.leftMargin + lp.width / 2;
+                        int centerY = lp.topMargin  + lp.height / 2;
+                        firestoreRepository.movePot(uid, potId, centerX, centerY);
 
                         Toast.makeText(this, "Planta asignada", Toast.LENGTH_SHORT).show();
                     });
